@@ -12,14 +12,11 @@ var (
 	incorrectKeyError   = errors.New("bad key")
 	incorrectValueError = errors.New("bad value")
 
-	emptyRegex = regexp.MustCompile(
-		`^(\s*)$|^(\s*[#].*)$`,
-	)
-	keyRegex = regexp.MustCompile(
+	emptyRegex    = regexp.MustCompile(`^(\s*)$|^(\s*[#].*)$`)
+	valueRegex    = regexp.MustCompile(`^=[^\s].*`)
+	variableRegex = regexp.MustCompile(`(\${[\w]*}|\$[\w]*)`)
+	keyRegex      = regexp.MustCompile(
 		`^(?:\s*)?(?:export\s+)?(?P<key>[a-zA-Z_][a-zA-Z_0-9]*)=`,
-	)
-	valueRegex = regexp.MustCompile(
-		`^=[^\s].*`,
 	)
 )
 
@@ -42,6 +39,18 @@ func removeInlineComment(str, quote string) string {
 		}
 	}
 	return str
+}
+
+// getVariables returns a map with values <key>:<string to replace>.
+// P.s. The value it is clean right part of the expression.
+func getVariables(value string) (result map[string]string) {
+	result = map[string]string{}
+	for _, item := range variableRegex.FindAllString(value, -1) {
+		key := strings.Trim(strings.TrimPrefix(item, "$"), "{}")
+		result[key] = item
+	}
+
+	return
 }
 
 // parseExpression breaks expression into key and value, ignore

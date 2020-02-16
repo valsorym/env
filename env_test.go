@@ -92,10 +92,30 @@ func TestReadParseStoreIgnoreWorngEntry(t *testing.T) {
 		`KEY_4`: `value_4`,
 		`KEY_5`: `value`,
 		`KEY_6`: `777`,
-		`KEY_7`: `${KEY_1}`,
+		`KEY_7`: `value_1`,
 	}
 
 	err := ReadParseStore("./examples/wrongentries.env", true, wrongentry)
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	// Compare with sample.
+	for key, value := range tests {
+		if v := os.Getenv(key); value != v {
+			t.Errorf("Incorrect value for `%s` key: `%s`!=`%s`", key, value, v)
+		}
+	}
+}
+
+// TestReadParseStoreVariables tests replacing variables with real values.
+func TestReadParseStoreVariables(t *testing.T) {
+	var tests = map[string]string{
+		`KEY_0`: `value_0`,
+		`KEY_1`: `value_001`,
+		`KEY_2`: `value_001->correct value`,
+	}
+	err := ReadParseStore("./examples/variables.env", true, false)
 	if err != nil {
 		t.Error(err.Error())
 	}
