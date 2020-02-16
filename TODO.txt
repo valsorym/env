@@ -1,22 +1,25 @@
 TODO List
 
-===============================================================================
-#0001 DONE
-===============================================================================
-Processing variables as parts of the value.
+TITLE: Processing variables as parts of the value.
+STATUS: DONE
+PROBLEM:
+    Example: file.env
+            export KEY_0="value_0"
+            export KEY_1="${KEY_0}01"
+    Result must be as:
+            KEY_0=value_0
+            KEY_1=value_001
+    P.s. The KEY_1 not as `${KEY_0}01` but as `value_001`.
+-------------------------------------------------------------------------------
+TITLE: Add synonyms for functions from the os package
+       for working with the environment.
+STATUS: PROCESS
+PROBLEM:
+    Add synonyms:
+    os.Getenv   => env.Get
+    os.Setenv   => env.Set
+    os.Unsetenv => env.Unset
+    os.Clearenv => env.Clear
+    os.Environ  => env.Environ
+-------------------------------------------------------------------------------
 
-Example: file.env
-        export KEY_0="value_0"
-        export KEY_1="${KEY_0}01"
-
-Result must be as:
-        KEY_0=value_0
-        KEY_1=value_001
-
-P.s. The KEY_1 not as `${KEY_0}01` but as `value_001`.
-
-
-===============================================================================
-#0002
-===============================================================================
-...
