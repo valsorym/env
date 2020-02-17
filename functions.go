@@ -26,8 +26,12 @@ func UpdateSafe(filename string) error {
 	return ReadParseStore(filename, expand, update, forced)
 }
 
-// Exist returns true if key sets in the environment.
-func Exist(key string) bool {
-	_, status := os.LookupEnv(key)
-	return status
+// Exists returns true if all keys sets in the environment.
+func Exists(keys ...string) bool {
+	for _, key := range keys {
+		if _, ok := os.LookupEnv(key); !ok {
+			return false
+		}
+	}
+	return true
 }

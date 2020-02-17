@@ -92,16 +92,19 @@ func TestUpdateSafe(t *testing.T) {
 	}
 }
 
-// TestExist tests Exist function.
+// TestExists tests Exists function.
 func TestExist(t *testing.T) {
 	Clear()
 	Set("KEY_0", "default")
+	Set("KEY_1", "default")
 
-	if !Exist("KEY_0") {
+	// Variables is exists.
+	if !Exists("KEY_0") || !Exists("KEY_0", "KEY_1") {
 		t.Error("Expected value `ture` != `false`.")
 	}
 
-	if Exist("KEY_1") {
+	// Variables doesn't exists.
+	if Exists("KEY_2") || Exists("KEY_0", "KEY_1", "KEY_2") {
 		t.Error("Expected value `false` != `true`.")
 	}
 }
