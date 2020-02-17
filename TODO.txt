@@ -35,4 +35,13 @@ PROBLEM:
     UpdateSafe load new keys with replacing existing ones.
     etc.
 -------------------------------------------------------------------------------
-
+ID:     0004
+TITLE:  Add Exist function.
+STATUS: PROCESS
+PROBLEM:
+    For example:
+    if env.Exist("KEY_0") {
+        // to do something ...
+    } else {
+        env.Set("KEY_0", "DEFAULT_VALUE")
+    }
