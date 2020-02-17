@@ -26,7 +26,7 @@ PROBLEM:
 -------------------------------------------------------------------------------
 ID:     0003
 TITLE:  Add simple load- functions.
-STATUS: PROCESS
+STATUS: DONE
 PROBLEM:
     For example:
     Load       load new keys without replacing existing ones and make expand;
