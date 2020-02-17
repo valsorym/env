@@ -45,3 +45,30 @@ PROBLEM:
     } else {
         env.Set("KEY_0", "DEFAULT_VALUE")
     }
+-------------------------------------------------------------------------------
+ID:     0005
+TITLE:  Add Decode function.
+STATUS: PROCESS
+PROBLEM:
+    For example:
+    env-file:
+    HOST="localhost"
+    PORT=8080
+    PATH_LIST=/first/path:/second/path
+
+    go-code:
+    type Config struct {
+        Host     string   `env:"HOST"`
+        Port     uint     `env:"PORT"`
+        PathList []string `env:"PATH_LIST,:"`
+    }
+
+    ...
+    var c = &Config{}
+    env.Decode(c)
+
+    ...
+    c.Host     // localhost
+    c.Port     // 8080
+    c.PathList // []string{"/first/path", "/second/path"}
+
