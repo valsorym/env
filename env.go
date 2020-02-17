@@ -9,14 +9,16 @@ import (
 // to store it into environment.
 //
 // Options:
-//    filename   path to the env-file;
-//    overwrite  if true to overwrites the set value in the environment
-//               to the new one from the env-file;
-//    wrongentry if true ignores wrong entries and loads all possible options,
-//               without causing an exception.
+//    filename path to the env-file;
+//    expand   if true replaces ${var} or $var in the string according
+//             to the values of the current environment variables;
+//    update   if true to overwrites the set value in the environment
+//             to the new one from the env-file;
+//    forced   if true ignores wrong entries and loads all possible options,
+//             without causing an exception.
 //
 // P.s. The function can be used to build more flexible tools.
-func ReadParseStore(filename string, overwrite, wrongentry bool) (err error) {
+func ReadParseStore(filename string, expand, update, forced bool) (err error) {
 	var (
 		file       *os.File
 		key, value string
@@ -43,16 +45,18 @@ func ReadParseStore(filename string, overwrite, wrongentry bool) (err error) {
 		// format like: [export] KEY=VALUE [# Comment]
 		key, value, err = parseExpression(str)
 		if err != nil {
-			if wrongentry {
+			if forced {
 				continue // ignore wrong entry
 			}
 			return // incorrect expression
 		}
 
 		// Overwrite or add new value.
-		if overwrite || len(os.Getenv(key)) == 0 {
-			value = os.ExpandEnv(value)
-			os.Setenv(key, value)
+		if update || len(Get(key)) == 0 {
+			if expand {
+				value = Expand(value)
+			}
+			Set(key, value)
 		}
 	}
 

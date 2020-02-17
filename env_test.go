@@ -1,7 +1,6 @@
 package env
 
 import (
-	"os"
 	"testing"
 )
 
@@ -23,7 +22,7 @@ func TestReadParseStoreExported(t *testing.T) {
 		`KEY_2`: `value_2`,
 	}
 
-	os.Clearenv()
+	Clear()
 	err := ReadParseStore("./examples/exported.env", true, false)
 	if err != nil {
 		t.Error(err.Error())
@@ -31,7 +30,7 @@ func TestReadParseStoreExported(t *testing.T) {
 
 	// Compare with sample.
 	for key, value := range tests {
-		if v := os.Getenv(key); value != v {
+		if v := Get(key); value != v {
 			t.Errorf("Incorrect value for `%s` key: `%s`!=`%s`", key, value, v)
 		}
 	}
@@ -49,7 +48,7 @@ func TestReadParseStoreComments(t *testing.T) {
 		`KEY_5`: `some text with # sharp sign and "escaped quotation" mark`,
 	}
 
-	os.Clearenv()
+	Clear()
 	err := ReadParseStore("./examples/comments.env", true, false)
 	if err != nil {
 		t.Error(err.Error())
@@ -57,7 +56,7 @@ func TestReadParseStoreComments(t *testing.T) {
 
 	// Compare with sample.
 	for key, value := range tests {
-		if v := os.Getenv(key); value != v {
+		if v := Get(key); value != v {
 			t.Errorf("Incorrect value for `%s` key: `%s`!=`%s`", key, value, v)
 		}
 	}
@@ -102,7 +101,7 @@ func TestReadParseStoreIgnoreWorngEntry(t *testing.T) {
 
 	// Compare with sample.
 	for key, value := range tests {
-		if v := os.Getenv(key); value != v {
+		if v := Get(key); value != v {
 			t.Errorf("Incorrect value for `%s` key: `%s`!=`%s`", key, value, v)
 		}
 	}
@@ -122,7 +121,7 @@ func TestReadParseStoreVariables(t *testing.T) {
 
 	// Compare with sample.
 	for key, value := range tests {
-		if v := os.Getenv(key); value != v {
+		if v := Get(key); value != v {
 			t.Errorf("Incorrect value for `%s` key: `%s`!=`%s`", key, value, v)
 		}
 	}
