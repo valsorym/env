@@ -127,3 +127,22 @@ func TestReadParseStoreVariables(t *testing.T) {
 		}
 	}
 }
+
+// TestReadParseStoreNotUpdate tests variable update protection.
+func TestReadParseStoreNotUpdate(t *testing.T) {
+	var update = false // prohibit updates !!!
+
+	// Set test data.
+	Clear()
+	Set("KEY_0", "") // set empty string
+
+	// Read simple env-file with KEY_0.
+	err := ReadParseStore("./examples/simple.env", false, update, false)
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	if v := Get("KEY_0"); v != "" {
+		t.Error("The value has been updated")
+	}
+}

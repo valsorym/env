@@ -52,7 +52,7 @@ func ReadParseStore(filename string, expand, update, forced bool) (err error) {
 		}
 
 		// Overwrite or add new value.
-		if update || len(Get(key)) == 0 {
+		if _, ok := os.LookupEnv(key); update || !ok {
 			if expand {
 				value = Expand(value)
 			}
