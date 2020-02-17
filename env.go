@@ -3,7 +3,6 @@ package env
 import (
 	"bufio"
 	"os"
-	"strings"
 )
 
 // ReadParseStore reads env-file, parse it to `key` and `value` and
@@ -52,11 +51,7 @@ func ReadParseStore(filename string, overwrite, wrongentry bool) (err error) {
 
 		// Overwrite or add new value.
 		if overwrite || len(os.Getenv(key)) == 0 {
-			if variables := getVariables(value); len(variables) != 0 {
-				for key, item := range variables {
-					value = strings.ReplaceAll(value, item, os.Getenv(key))
-				}
-			}
+			value = os.ExpandEnv(value)
 			os.Setenv(key, value)
 		}
 	}

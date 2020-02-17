@@ -38,23 +38,6 @@ func TestRemoveInlineComment(t *testing.T) {
 	}
 }
 
-// TestGetVariables tests getVariables function.
-func TestGetVariables(t *testing.T) {
-	var tests = map[string][]string{
-		"The ${KEY_0}, and $KEY_1 ...":    []string{"KEY_0", "KEY_1"},
-		"The ${KEY_0}01, and $KEY_10 ...": []string{"KEY_0", "KEY_10"},
-	}
-
-	for value, test := range tests {
-		r := getVariables(value)
-		for _, key := range test {
-			if _, ok := r[key]; !ok {
-				t.Errorf("The `%s` key not found.", key)
-			}
-		}
-	}
-}
-
 // TestParseExpressionIncorrectKey tests parseExpression function.
 // The function returns an error on the wrong key.
 func TestParseExpressionIncorrectKey(t *testing.T) {
