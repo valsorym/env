@@ -1,5 +1,7 @@
 package env
 
+import "os"
+
 // Load loads keys without replacing existing ones and make expand.
 func Load(filename string) error {
 	var expand, update, forced = true, false, false
@@ -22,4 +24,10 @@ func Update(filename string) error {
 func UpdateSafe(filename string) error {
 	var expand, update, forced = false, true, false
 	return ReadParseStore(filename, expand, update, forced)
+}
+
+// Exist returns true if key sets in the environment.
+func Exist(key string) bool {
+	_, status := os.LookupEnv(key)
+	return status
 }

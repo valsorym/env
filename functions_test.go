@@ -91,3 +91,17 @@ func TestUpdateSafe(t *testing.T) {
 		t.Errorf("Expected value `${KEY_0}01` != `%s`.", v)
 	}
 }
+
+// TestExist tests Exist function.
+func TestExist(t *testing.T) {
+	Clear()
+	Set("KEY_0", "default")
+
+	if !Exist("KEY_0") {
+		t.Error("Expected value `ture` != `false`.")
+	}
+
+	if Exist("KEY_1") {
+		t.Error("Expected value `false` != `true`.")
+	}
+}

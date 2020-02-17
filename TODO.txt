@@ -37,7 +37,7 @@ PROBLEM:
 -------------------------------------------------------------------------------
 ID:     0004
 TITLE:  Add Exist function.
-STATUS: PROCESS
+STATUS: DONE
 PROBLEM:
     For example:
     if env.Exist("KEY_0") {
