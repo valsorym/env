@@ -24,4 +24,15 @@ PROBLEM:
     os.Clearenv => env.Clear
     os.Environ  => env.Environ
 -------------------------------------------------------------------------------
+ID:     0003
+TITLE:  Add simple load- functions.
+STATUS: PROCESS
+PROBLEM:
+    For example:
+    Load       load new keys without replacing existing ones and make expand;
+    LoadSafe   load new keys without replacing existing ones;
+    Update     load new keys with replacing existing ones and make expand;
+    UpdateSafe load new keys with replacing existing ones.
+    etc.
+-------------------------------------------------------------------------------
 
