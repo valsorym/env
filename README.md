@@ -29,7 +29,7 @@ $ cd env && make link
 To use the env package, you must import it as:
 
 ```
-    import "github.com/goloop/env"
+import "github.com/goloop/env"
 
 ```
 
