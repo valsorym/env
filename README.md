@@ -48,23 +48,24 @@ import (
     "fmt"
     "log"
     "os"
-    
+
     "github.com/goloop/env"
 )
 
 func main() {
-        // Load env-file.
-	err := Update("~/workspace/config.env")
-        if err != nil {
-            log.Fatal(err.Error())
-        }
-        
-        // Get value.
-        url = fmt.Sprintf("https://%s:%s",
-	        env.Get("HOST"),
-	        env.Get("PORT"))
-	// Do something ... 
+    // Load env-file.
+    err := Update("~/workspace/config.env")
+    if err != nil {
+        log.Fatal(err.Error())
     }
+
+    // Get value.
+    url = fmt.Sprintf("https://%s:%s",
+        env.Get("HOST"),
+        env.Get("PORT"))
+
+    // Do something ... 
+}
 ```
 
 ## Functions
