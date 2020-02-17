@@ -43,3 +43,8 @@ unlink:
 		echo "Unlinked: ${GOPATH}/src/${REPOSITORY_NAME}/${PACKAGE_NAME}"
 test:
 	@go test github.com/goloop/env
+test-cover:
+	@go test -cover github.com/goloop/env && \
+		go test -coverprofile=coverage.out github.com/goloop/env && \
+		go tool cover -func=coverage.out && \
+		go tool cover -html=coverage.out
