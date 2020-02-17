@@ -116,9 +116,10 @@ func TestReadParseStoreVariables(t *testing.T) {
 	var expand = true
 	var tests = map[string]string{
 		"KEY_0": "value_0",
-		"KEY_1": "value_001",
-		"KEY_2": "value_001->correct value",
-		"KEY_3": "value_0value_001",
+		"KEY_1": "value_1",
+		"KEY_2": "value_001",
+		"KEY_3": "value_001->correct value",
+		"KEY_4": "value_0value_001",
 	}
 
 	// Load env-file.
