@@ -15,7 +15,7 @@ PROBLEM:
 ID:     0002
 TITLE:  Add synonyms for functions from the os package
         for working with the environment.
-STATUS: PROCESS
+STATUS: DONE
 PROBLEM:
     Add synonyms:
     os.Getenv   => env.Get

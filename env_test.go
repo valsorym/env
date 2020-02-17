@@ -7,7 +7,7 @@ import (
 // TestReadParseStoreOpen tests exception handling when
 // opening a nonexistent file.
 func TestLoadReadParseStoreOpen(t *testing.T) {
-	err := ReadParseStore("./examples/nonexist.env", true, false)
+	err := ReadParseStore("./examples/nonexist.env", false, true, false)
 	if err == nil {
 		t.Error("File descriptor leak.")
 	}
@@ -23,7 +23,7 @@ func TestReadParseStoreExported(t *testing.T) {
 	}
 
 	Clear()
-	err := ReadParseStore("./examples/exported.env", true, false)
+	err := ReadParseStore("./examples/exported.env", false, true, false)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -49,7 +49,7 @@ func TestReadParseStoreComments(t *testing.T) {
 	}
 
 	Clear()
-	err := ReadParseStore("./examples/comments.env", true, false)
+	err := ReadParseStore("./examples/comments.env", false, true, false)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -65,7 +65,7 @@ func TestReadParseStoreComments(t *testing.T) {
 // TestReadParseStoreWorngEqualKey tests problem with space
 // before the equal sign.
 func TestReadParseStoreWorngEqualKey(t *testing.T) {
-	err := ReadParseStore("./examples/wrongequalkey.env", true, false)
+	err := ReadParseStore("./examples/wrongequalkey.env", false, true, false)
 	if err != incorrectKeyError {
 		t.Error("Key error ignored")
 	}
@@ -75,7 +75,7 @@ func TestReadParseStoreWorngEqualKey(t *testing.T) {
 // TestReadParseStoreWorngEqualValue tests problem with space
 // after the equal sign.
 func TestReadParseStoreWorngEqualValue(t *testing.T) {
-	err := ReadParseStore("./examples/wrongequalvalue.env", true, false)
+	err := ReadParseStore("./examples/wrongequalvalue.env", false, true, false)
 	if err != incorrectValueError {
 		t.Error("Value error ignored")
 	}
@@ -84,17 +84,17 @@ func TestReadParseStoreWorngEqualValue(t *testing.T) {
 // TestReadParseStoreIgnoreWorngEntry tests problem with space
 // before and after the equal sign, and not correct lines.
 func TestReadParseStoreIgnoreWorngEntry(t *testing.T) {
-	var wrongentry = true
+	var forced = true
 	var tests = map[string]string{
 		`KEY_0`: `value_0`,
 		`KEY_1`: `value_1`,
 		`KEY_4`: `value_4`,
 		`KEY_5`: `value`,
 		`KEY_6`: `777`,
-		`KEY_7`: `value_1`,
+		`KEY_7`: `${KEY_1}`,
 	}
 
-	err := ReadParseStore("./examples/wrongentries.env", true, wrongentry)
+	err := ReadParseStore("./examples/wrongentries.env", false, true, forced)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -109,12 +109,13 @@ func TestReadParseStoreIgnoreWorngEntry(t *testing.T) {
 
 // TestReadParseStoreVariables tests replacing variables with real values.
 func TestReadParseStoreVariables(t *testing.T) {
+	var expand = true
 	var tests = map[string]string{
 		`KEY_0`: `value_0`,
 		`KEY_1`: `value_001`,
 		`KEY_2`: `value_001->correct value`,
 	}
-	err := ReadParseStore("./examples/variables.env", true, false)
+	err := ReadParseStore("./examples/variables.env", expand, true, false)
 	if err != nil {
 		t.Error(err.Error())
 	}
