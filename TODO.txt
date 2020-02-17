@@ -1,6 +1,7 @@
 TODO List
 
-TITLE: Processing variables as parts of the value.
+ID:     0001
+TITLE:  Processing variables as parts of the value.
 STATUS: DONE
 PROBLEM:
     Example: file.env
@@ -11,8 +12,9 @@ PROBLEM:
             KEY_1=value_001
     P.s. The KEY_1 not as `${KEY_0}01` but as `value_001`.
 -------------------------------------------------------------------------------
-TITLE: Add synonyms for functions from the os package
-       for working with the environment.
+ID:     0002
+TITLE:  Add synonyms for functions from the os package
+        for working with the environment.
 STATUS: PROCESS
 PROBLEM:
     Add synonyms:
