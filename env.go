@@ -8,7 +8,7 @@ import (
 // ReadParseStore reads env-file, parse it to `key` and `value` and
 // to store it into environment.
 //
-// Options:
+// Arguments:
 //    filename path to the env-file;
 //    expand   if true replaces ${var} or $var in the string according
 //             to the values of the current environment variables;

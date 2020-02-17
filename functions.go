@@ -19,7 +19,7 @@ func Update(filename string) error {
 }
 
 // UpdateSafe loads keys with replacing existing ones.
-func Update(filename string) error {
+func UpdateSafe(filename string) error {
 	var expand, update, forced = false, true, false
 	return ReadParseStore(filename, expand, update, forced)
 }
