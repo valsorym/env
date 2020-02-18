@@ -69,7 +69,8 @@ func main() {
 ```
 
 ## Functions
-#### Load
+
+### Load
 
 Loads keys without replacing existing ones and make expand.
 
