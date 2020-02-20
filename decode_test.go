@@ -35,6 +35,10 @@ type DataString struct {
 	KeyString string `env:"KEY_STRING"`
 }
 
+type DataArray struct {
+	KeyArrayInt [3]int `env:"KEY_ARRAY_INT,:"`
+}
+
 // TestParseTag tests parseTag function.
 func TestParseTag(t *testing.T) {
 	var tests = [][]string{
@@ -231,4 +235,33 @@ func TestDeocdeEnvironString(t *testing.T) {
 			t.Errorf("KeyString == `%s` but need `%s`", d.KeyString, s)
 		}
 	}
+}
+
+// TestDecodeEnvironArrayInt tests decodeEnviron function for [...]int type.
+func TestDeocdeEnvironArray(t *testing.T) {
+	var tests = [][3]int{
+		[3]int{1, 2, 3},
+		[3]int{3, 3, 3},
+		[3]int{7, 7, 7},
+	}
+
+	for _, v := range tests {
+		var d = &DataArray{}
+		s := strings.Trim(strings.Replace(fmt.Sprint(v), " ", ":", -1), "[]")
+
+		Clear()
+		Set("KEY_ARRAY_INT", s)
+
+		err := decodeEnviron(d)
+		if err != nil {
+			t.Error(err)
+		}
+
+		v = d.KeyArrayInt
+		r := strings.Trim(strings.Replace(fmt.Sprint(v), " ", ":", -1), "[]")
+		if r != s {
+			t.Errorf("KeyArrayInt == `%s` but need `%s`", r, s)
+		}
+	}
+
 }

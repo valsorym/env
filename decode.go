@@ -56,7 +56,7 @@ func decodeEnviron(scope interface{}) error {
 	// Walk through all the fields of the transferred object.
 	for i := 0; i < rv.NumField(); i++ {
 		field := rv.Type().Field(i)
-		name, _ := parseTag(field.Tag.Get(TagName), field.Name, " ")
+		name, sep := parseTag(field.Tag.Get(TagName), field.Name, " ")
 
 		// Change value.
 		instance := rv.FieldByName(field.Name)
@@ -142,12 +142,25 @@ func decodeEnviron(scope interface{}) error {
 		case reflect.String:
 			instance.SetString(Get(name))
 
-			// case reflect.Array:
-			// 	t := instance.Index(0).Kind() // get type of the array
-			// 	err := setArray(&instance, name, sep)
-			// 	if err != nil {
-			// 		return err
-			// 	}
+		case reflect.Array:
+			t := instance.Index(0).Kind() // get type of the array
+			v := strings.Split(Get(name), sep)
+			if len(v) > instance.Len() {
+				return fmt.Errorf("array index %d out of bounds [0:%d]",
+					len(v), instance.Len())
+			}
+
+			for _, item := range v {
+				switch t {
+				case reflect.Int:
+					r, err := strToInt(item)
+					if err != nil {
+						return err
+					}
+					reflect.Append(instance, reflect.ValueOf(r))
+				}
+			}
+
 			// case reflect.Slice:
 			// 	tmp := reflect.MakeSlice(instance.Type(), 1, 1)
 			// 	t := tmp.Index(0).Kind() // get type of the slice
