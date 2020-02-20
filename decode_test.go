@@ -35,8 +35,24 @@ type DataString struct {
 	KeyString string `env:"KEY_STRING"`
 }
 
-type DataArray struct {
-	KeyArrayInt [3]int `env:"KEY_ARRAY_INT,:"`
+type DataSlice struct {
+	KeyInt   []int   `env:"KEY_INT,:"`
+	KeyInt8  []int8  `env:"KEY_INT8,:"`
+	KeyInt16 []int16 `env:"KEY_INT16,:"`
+	KeyInt32 []int32 `env:"KEY_INT32,:"`
+	KeyInt64 []int64 `env:"KEY_INT64,:"`
+
+	KeyUint   []uint   `env:"KEY_UINT,:"`
+	KeyUint8  []uint8  `env:"KEY_UINT8,:"`
+	KeyUint16 []uint16 `env:"KEY_UINT16,:"`
+	KeyUint32 []uint32 `env:"KEY_UINT32,:"`
+	KeyUint64 []uint64 `env:"KEY_UINT64,:"`
+
+	KeyFloat32 []float32 `env:"KEY_FLOAT32,:"`
+	KeyFloat64 []float64 `env:"KEY_FLOAT64,:"`
+
+	KeyString []string `env:"KEY_STRING,:"`
+	KeyBool   []bool   `env:"KEY_BOOL,:"`
 }
 
 // TestParseTag tests parseTag function.
@@ -237,31 +253,104 @@ func TestDeocdeEnvironString(t *testing.T) {
 	}
 }
 
-// TestDecodeEnvironArrayInt tests decodeEnviron function for [...]int type.
-func TestDeocdeEnvironArray(t *testing.T) {
-	var tests = [][3]int{
-		[3]int{1, 2, 3},
-		[3]int{3, 3, 3},
-		[3]int{7, 7, 7},
+// TestDecodeEnvironSlice tests decodeEnviron function for
+// slice type with correct values.
+func TestDeocdeEnvironSlice(t *testing.T) {
+	var tests = map[string]string{
+		"KEY_INT":   "-30:-20:-10:0:10:20:30",
+		"KEY_INT8":  "-30:-20:-10:0:10:20:30",
+		"KEY_INT16": "-30:-20:-10:0:10:20:30",
+		"KEY_INT32": "-30:-20:-10:0:10:20:30",
+		"KEY_INT64": "-30:-20:-10:0:10:20:30",
+
+		"KEY_UINT":   "0:10:20:30",
+		"KEY_UINT8":  "0:10:20:30",
+		"KEY_UINT16": "0:10:20:30",
+		"KEY_UINT32": "0:10:20:30",
+		"KEY_UINT64": "0:10:20:30",
+
+		"KEY_FLOAT32": "-3.1:-1.27:0:1.27:3.3",
+		"KEY_FLOAT64": "-3.1:-1.27:0:1.27:3.3",
+
+		"KEY_STRING": "one:two:three:four:five",
+		"KEY_BOOL":   "1:true:True:TRUE:0:false:False:False",
 	}
 
-	for _, v := range tests {
-		var d = &DataArray{}
-		s := strings.Trim(strings.Replace(fmt.Sprint(v), " ", ":", -1), "[]")
+	// Convert slice into string.
+	toStr := func(v interface{}) string {
+		return strings.Trim(strings.Replace(fmt.Sprint(v), " ", ":", -1), "[]")
+	}
+
+	// Testing.
+	for key, value := range tests {
+		var d = &DataSlice{}
 
 		Clear()
-		Set("KEY_ARRAY_INT", s)
+		Set(key, value)
 
 		err := decodeEnviron(d)
 		if err != nil {
 			t.Error(err)
 		}
 
-		v = d.KeyArrayInt
-		r := strings.Trim(strings.Replace(fmt.Sprint(v), " ", ":", -1), "[]")
-		if r != s {
-			t.Errorf("KeyArrayInt == `%s` but need `%s`", r, s)
+		switch key {
+		case "KEY_INT":
+			if r := toStr(d.KeyInt); r != value {
+				t.Errorf("KeyInt == `%s` but need `%s`", r, value)
+			}
+		case "KEY_INT8":
+			if r := toStr(d.KeyInt8); r != value {
+				t.Errorf("KeyInt8 == `%s` but need `%s`", r, value)
+			}
+		case "KEY_INT16":
+			if r := toStr(d.KeyInt16); r != value {
+				t.Errorf("KeyInt16 == `%s` but need `%s`", r, value)
+			}
+		case "KEY_INT32":
+			if r := toStr(d.KeyInt32); r != value {
+				t.Errorf("KeyInt32 == `%s` but need `%s`", r, value)
+			}
+		case "KEY_INT64":
+			if r := toStr(d.KeyInt64); r != value {
+				t.Errorf("KeyInt64 == `%s` but need `%s`", r, value)
+			}
+		case "KEY_UINT":
+			if r := toStr(d.KeyUint); r != value {
+				t.Errorf("KeyUint == `%s` but need `%s`", r, value)
+			}
+		case "KEY_UINT8":
+			if r := toStr(d.KeyUint8); r != value {
+				t.Errorf("KeyUint8 == `%s` but need `%s`", r, value)
+			}
+		case "KEY_UINT16":
+			if r := toStr(d.KeyUint16); r != value {
+				t.Errorf("KeyUint16 == `%s` but need `%s`", r, value)
+			}
+		case "KEY_UINT32":
+			if r := toStr(d.KeyUint32); r != value {
+				t.Errorf("KeyUint32 == `%s` but need `%s`", r, value)
+			}
+		case "KEY_UINT64":
+			if r := toStr(d.KeyUint64); r != value {
+				t.Errorf("KeyUint64 == `%s` but need `%s`", r, value)
+			}
+		case "KEY_FLOAT32":
+			if r := toStr(d.KeyFloat32); r != value {
+				t.Errorf("KeyFloat32 == `%s` but need `%s`", r, value)
+			}
+		case "KEY_FLOAT64":
+			if r := toStr(d.KeyFloat64); r != value {
+				t.Errorf("KeyFloat64 == `%s` but need `%s`", r, value)
+			}
+		case "KEY_STRING":
+			if r := toStr(d.KeyString); r != value {
+				t.Errorf("KeyString == `%s` but need `%s`", r, value)
+			}
+		case "KEY_BOOL":
+			value = "true:true:true:true:false:false:false:false"
+			if r := toStr(d.KeyBool); r != value {
+				t.Errorf("KeyBoll == `%s` but need `%s`", r, value)
+			}
 		}
 	}
-
 }
