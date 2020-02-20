@@ -31,6 +31,10 @@ type DataBool struct {
 	KeyBool bool `env:"KEY_BOOL"`
 }
 
+type DataString struct {
+	KeyString string `env:"KEY_STRING"`
+}
+
 // TestGetInt64 tests getInt64 function.
 func TestGetInt64(t *testing.T) {
 	var (
@@ -285,6 +289,7 @@ func TestDeocdeEnvironBool(t *testing.T) {
 		"FALSE": false,
 	}
 
+	// Test correct values.
 	for value, test := range tests {
 		var d = &DataBool{}
 
@@ -297,7 +302,7 @@ func TestDeocdeEnvironBool(t *testing.T) {
 		}
 
 		if d.KeyBool != test {
-			t.Errorf("KeyBool == %t but nedd %t", d.KeyBool, test)
+			t.Errorf("KeyBool == %t but need %t", d.KeyBool, test)
 		}
 	}
 
@@ -311,6 +316,35 @@ func TestDeocdeEnvironBool(t *testing.T) {
 		err := decodeEnviron(d)
 		if err == nil {
 			t.Error("didn't handle the error")
+		}
+	}
+}
+
+// TestDecodeEnvironString tests decodeEnviron function for string type.
+func TestDeocdeEnvironString(t *testing.T) {
+	var tests = []interface{}{
+		8080,
+		"Hello World",
+		"true",
+		true,
+		3.14,
+	}
+
+	// Test correct values.
+	for _, test := range tests {
+		var d = &DataString{}
+		var s = fmt.Sprintf("%v", test)
+
+		Clear()
+		Set("KEY_STRING", s)
+
+		err := decodeEnviron(d)
+		if err != nil {
+			t.Error(err)
+		}
+
+		if d.KeyString != s {
+			t.Errorf("KeyString == `%s` but need `%s`", d.KeyString, s)
 		}
 	}
 }

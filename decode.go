@@ -118,31 +118,61 @@ func decodeEnviron(scope interface{}) error {
 		instance := rv.FieldByName(field.Name)
 		switch field.Type.Kind() {
 		case reflect.Int:
-			err := setInt(&instance, name)
-			if err != nil {
-				return err
-			}
-		case reflect.Int8:
-			err := setInt8(&instance, name)
-			if err != nil {
-				return err
-			}
-		case reflect.Int16:
-			err := setInt16(&instance, name)
-			if err != nil {
-				return err
-			}
-		case reflect.Int32:
-			err := setInt32(&instance, name)
-			if err != nil {
-				return err
-			}
-		case reflect.Int64:
-			err := setInt64(&instance, name)
+			// err := setInt(&instance, name)
+			// if err != nil {
+			// 	return err
+			// }
+
+			r, err := strToInt(Get(name))
 			if err != nil {
 				return err
 			}
 
+			instance.SetInt(int64(r))
+		case reflect.Int8:
+			// err := setInt8(&instance, name)
+			// if err != nil {
+			// 	return err
+			// }
+			r, err := strToInt8(Get(name))
+			if err != nil {
+				return err
+			}
+
+			instance.SetInt(int64(r))
+		case reflect.Int16:
+			// err := setInt16(&instance, name)
+			// if err != nil {
+			// 	return err
+			// }
+			r, err := strToInt16(Get(name))
+			if err != nil {
+				return err
+			}
+
+			instance.SetInt(int64(r))
+		case reflect.Int32:
+			// err := setInt32(&instance, name)
+			// if err != nil {
+			// 	return err
+			// }
+			r, err := strToInt32(Get(name))
+			if err != nil {
+				return err
+			}
+
+			instance.SetInt(int64(r))
+		case reflect.Int64:
+			// err := setInt64(&instance, name)
+			// if err != nil {
+			// 	return err
+			// }
+			r, err := strToInt64(Get(name))
+			if err != nil {
+				return err
+			}
+
+			instance.SetInt(int64(r))
 		case reflect.Uint:
 			err := setUint(&instance, name)
 			if err != nil {
@@ -183,6 +213,24 @@ func decodeEnviron(scope interface{}) error {
 			if err != nil {
 				return err
 			}
+		case reflect.String:
+			err := setString(&instance, name)
+			if err != nil {
+				return err
+			}
+			// case reflect.Array:
+			// 	t := instance.Index(0).Kind() // get type of the array
+			// 	err := setArray(&instance, name, sep)
+			// 	if err != nil {
+			// 		return err
+			// 	}
+			// case reflect.Slice:
+			// 	tmp := reflect.MakeSlice(instance.Type(), 1, 1)
+			// 	t := tmp.Index(0).Kind() // get type of the slice
+			// 	err := setSlice(&instance, name, sep)
+			// 	if err != nil {
+			// 		return err
+			// 	}
 		} // switch
 	} // for
 
@@ -402,3 +450,18 @@ func setBool(instance *reflect.Value, name string) error {
 	instance.SetBool(b)
 	return nil
 }
+
+// setString try to set `string` to instance.
+func setString(instance *reflect.Value, name string) error {
+	v := Get(name)
+	instance.SetString(v)
+	return nil
+}
+
+// // setSlice try to set `slice` to instance.
+// func setSlice(instance *reflect.Value, name, sep string) error {
+// 	v := strings.Split(Get(name), sep)
+//
+// 	instance.SetSlice(v)
+// 	return nil
+// }
