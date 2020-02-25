@@ -68,7 +68,7 @@ func TestStrToInt32Coreect(t *testing.T) {
 			t.Error(err)
 		}
 
-		if r != test {
+		if r != int64(test) {
 			t.Errorf("Expected value %d but the result %d", test, r)
 		}
 	}
@@ -112,7 +112,7 @@ func TestStrToInt16Coreect(t *testing.T) {
 			t.Error(err)
 		}
 
-		if r != test {
+		if r != int64(test) {
 			t.Errorf("Expected value %d but the result %d", test, r)
 		}
 	}
@@ -156,7 +156,7 @@ func TestStrToInt8Coreect(t *testing.T) {
 			t.Error(err)
 		}
 
-		if r != test {
+		if r != int64(test) {
 			t.Errorf("Expected value %d but the result %d", test, r)
 		}
 	}
@@ -205,7 +205,7 @@ func TestStrToIntCoreect(t *testing.T) {
 			t.Error(err)
 		}
 
-		if r != test {
+		if r != int64(test) {
 			t.Errorf("Expected value %d but the result %d", test, r)
 		}
 	}
@@ -290,7 +290,7 @@ func TestStrToUint32Coreect(t *testing.T) {
 			t.Error(err)
 		}
 
-		if r != test {
+		if r != uint64(test) {
 			t.Errorf("Expected value %d but the result %d", test, r)
 		}
 	}
@@ -334,7 +334,7 @@ func TestStrToUint16Coreect(t *testing.T) {
 			t.Error(err)
 		}
 
-		if r != test {
+		if r != uint64(test) {
 			t.Errorf("Expected value %d but the result %d", test, r)
 		}
 	}
@@ -378,7 +378,7 @@ func TestStrToUint8Coreect(t *testing.T) {
 			t.Error(err)
 		}
 
-		if r != test {
+		if r != uint64(test) {
 			t.Errorf("Expected value %d but the result %d", test, r)
 		}
 	}
@@ -422,7 +422,7 @@ func TestStrToUintCoreect(t *testing.T) {
 			t.Error(err)
 		}
 
-		if r != test {
+		if r != uint64(test) {
 			t.Errorf("Expected value %d but the result %d", test, r)
 		}
 	}
@@ -466,7 +466,7 @@ func TestStrToFloat64Coreect(t *testing.T) {
 			t.Error(err)
 		}
 
-		if r != test {
+		if math.Abs(r-test) > FloatAccuracy {
 			t.Errorf("Expected value %f but the result %f", test, r)
 		}
 	}
@@ -507,7 +507,7 @@ func TestStrToFloat32Coreect(t *testing.T) {
 			t.Error(err)
 		}
 
-		if r != test {
+		if math.Abs(r-float64(test)) > FloatAccuracy {
 			t.Errorf("Expected value %f but the result %f", test, r)
 		}
 	}
@@ -529,8 +529,6 @@ func TestStrToFloat32Incorrect(t *testing.T) {
 		}
 	}
 }
-
-////////////
 
 // TestStrToBoolCorrect tests strToBool function for correct values.
 func TestStrToBoolCoreect(t *testing.T) {

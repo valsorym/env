@@ -60,75 +60,24 @@ func decodeEnviron(scope interface{}) error {
 
 		// Change value.
 		instance := rv.FieldByName(field.Name)
-		switch field.Type.Kind() {
-		case reflect.Int:
-			r, err := strToInt(Get(name))
-			if err != nil {
-				return err
-			}
-			instance.SetInt(int64(r))
-		case reflect.Int8:
-			r, err := strToInt8(Get(name))
-			if err != nil {
-				return err
-			}
-			instance.SetInt(int64(r))
-		case reflect.Int16:
-			r, err := strToInt16(Get(name))
-			if err != nil {
-				return err
-			}
-			instance.SetInt(int64(r))
-		case reflect.Int32:
-			r, err := strToInt32(Get(name))
-			if err != nil {
-				return err
-			}
-			instance.SetInt(int64(r))
-		case reflect.Int64:
-			r, err := strToInt64(Get(name))
+		kind := field.Type.Kind()
+		switch kind {
+		case reflect.Int, reflect.Int8, reflect.Int16,
+			reflect.Int32, reflect.Int64:
+			r, err := strToIntKind(Get(name), kind)
 			if err != nil {
 				return err
 			}
 			instance.SetInt(r)
-		case reflect.Uint:
-			r, err := strToUint(Get(name))
-			if err != nil {
-				return err
-			}
-			instance.SetUint(uint64(r))
-		case reflect.Uint8:
-			r, err := strToUint8(Get(name))
-			if err != nil {
-				return err
-			}
-			instance.SetUint(uint64(r))
-		case reflect.Uint16:
-			r, err := strToUint16(Get(name))
-			if err != nil {
-				return err
-			}
-			instance.SetUint(uint64(r))
-		case reflect.Uint32:
-			r, err := strToUint32(Get(name))
-			if err != nil {
-				return err
-			}
-			instance.SetUint(uint64(r))
-		case reflect.Uint64:
-			r, err := strToUint64(Get(name))
+		case reflect.Uint, reflect.Uint8, reflect.Uint16,
+			reflect.Uint32, reflect.Uint64:
+			r, err := strToUintKind(Get(name), kind)
 			if err != nil {
 				return err
 			}
 			instance.SetUint(r)
-		case reflect.Float32:
-			r, err := strToFloat32(Get(name))
-			if err != nil {
-				return err
-			}
-			instance.SetFloat(float64(r))
-		case reflect.Float64:
-			r, err := strToFloat64(Get(name))
+		case reflect.Float32, reflect.Float64:
+			r, err := strToFloatKind(Get(name), kind)
 			if err != nil {
 				return err
 			}
@@ -142,22 +91,17 @@ func decodeEnviron(scope interface{}) error {
 		case reflect.String:
 			instance.SetString(Get(name))
 		case reflect.Slice:
-			seq := strings.Split(Get(name), sep)
 			tmp := reflect.MakeSlice(instance.Type(), 1, 1)
-			kind := tmp.Index(0).Kind() // get type of the slice
-			err := setSlice(&instance, seq, kind)
+			err := setSlice(
+				&instance,
+				strings.Split(Get(name), sep),
+				tmp.Index(0).Kind(),
+			)
 			if err != nil {
 				return err
 			}
-
-			//case reflect.Array:
-			// 	seq := strings.Split(Get(name), sep)
-			// 	kind := instance.Index(0).Kind() // get type of the array
-			// 	if len(seq) > instance.Len() {
-			// 		return fmt.Errorf("array index %d out of bounds [0:%d]",
-			// 			len(seq), instance.Len())
-			// 	}
-			// 	err:=setSequence(&instance, seq, kind)
+		default:
+			return fmt.Errorf("incorrect type")
 		} // switch
 	} // for
 
@@ -165,118 +109,140 @@ func decodeEnviron(scope interface{}) error {
 }
 
 // setSlice sets slice into instance.
-func setSlice(instance *reflect.Value, seq []string, kind reflect.Kind) error {
+func setSlice(instance *reflect.Value, seq []string, kind reflect.Kind) (err error) {
+	var (
+		intSeq    []int64
+		uintSeq   []uint64
+		floatSeq  []float64
+		stringSeq []string
+		boolSeq   []bool
+	)
+
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("%v", r)
+		}
+	}()
+
+	// Convert to correct type slice.
 	switch kind {
-	case reflect.String:
+	case reflect.Int, reflect.Int8, reflect.Int16,
+		reflect.Int32, reflect.Int64:
+		intSeq = make([]int64, 0, len(seq))
 		for _, value := range seq {
-			instance.Set(reflect.Append(*instance, reflect.ValueOf(value)))
-		}
-	case reflect.Int:
-		for _, value := range seq {
-			r, err := strToInt(value)
+			r, err := strToIntKind(value, kind)
 			if err != nil {
 				return err
 			}
-			instance.Set(reflect.Append(*instance, reflect.ValueOf(r)))
+			intSeq = append(intSeq, r)
 		}
-	case reflect.Int8:
+	case reflect.Uint, reflect.Uint8, reflect.Uint16,
+		reflect.Uint32, reflect.Uint64:
+		uintSeq = make([]uint64, 0, len(seq))
 		for _, value := range seq {
-			r, err := strToInt8(value)
+			r, err := strToUintKind(value, kind)
 			if err != nil {
 				return err
 			}
-			instance.Set(reflect.Append(*instance, reflect.ValueOf(r)))
+			uintSeq = append(uintSeq, r)
 		}
-	case reflect.Int16:
+	case reflect.Float32, reflect.Float64:
+		floatSeq = make([]float64, 0, len(seq))
 		for _, value := range seq {
-			r, err := strToInt16(value)
+			r, err := strToFloatKind(value, kind)
 			if err != nil {
 				return err
 			}
-			instance.Set(reflect.Append(*instance, reflect.ValueOf(r)))
-		}
-	case reflect.Int32:
-		for _, value := range seq {
-			r, err := strToInt32(value)
-			if err != nil {
-				return err
-			}
-			instance.Set(reflect.Append(*instance, reflect.ValueOf(r)))
-		}
-	case reflect.Int64:
-		for _, value := range seq {
-			r, err := strToInt64(value)
-			if err != nil {
-				return err
-			}
-			instance.Set(reflect.Append(*instance, reflect.ValueOf(r)))
-		}
-	case reflect.Uint:
-		for _, value := range seq {
-			r, err := strToUint(value)
-			if err != nil {
-				return err
-			}
-			instance.Set(reflect.Append(*instance, reflect.ValueOf(r)))
-		}
-	case reflect.Uint8:
-		for _, value := range seq {
-			r, err := strToUint8(value)
-			if err != nil {
-				return err
-			}
-			instance.Set(reflect.Append(*instance, reflect.ValueOf(r)))
-		}
-	case reflect.Uint16:
-		for _, value := range seq {
-			r, err := strToUint16(value)
-			if err != nil {
-				return err
-			}
-			instance.Set(reflect.Append(*instance, reflect.ValueOf(r)))
-		}
-	case reflect.Uint32:
-		for _, value := range seq {
-			r, err := strToUint32(value)
-			if err != nil {
-				return err
-			}
-			instance.Set(reflect.Append(*instance, reflect.ValueOf(r)))
-		}
-	case reflect.Uint64:
-		for _, value := range seq {
-			r, err := strToUint64(value)
-			if err != nil {
-				return err
-			}
-			instance.Set(reflect.Append(*instance, reflect.ValueOf(r)))
-		}
-	case reflect.Float32:
-		for _, value := range seq {
-			r, err := strToFloat32(value)
-			if err != nil {
-				return err
-			}
-			instance.Set(reflect.Append(*instance, reflect.ValueOf(r)))
-		}
-	case reflect.Float64:
-		for _, value := range seq {
-			r, err := strToFloat64(value)
-			if err != nil {
-				return err
-			}
-			instance.Set(reflect.Append(*instance, reflect.ValueOf(r)))
+			floatSeq = append(floatSeq, r)
 		}
 	case reflect.Bool:
+		boolSeq = make([]bool, 0, len(seq))
 		for _, value := range seq {
 			r, err := strToBool(value)
 			if err != nil {
 				return err
 			}
-			instance.Set(reflect.Append(*instance, reflect.ValueOf(r)))
+			boolSeq = append(boolSeq, r)
 		}
+	case reflect.String:
+		stringSeq = seq
 	default:
 		return fmt.Errorf("incorrect type %v\n", kind)
+	}
+
+	// Set correct value.
+	switch kind {
+	case reflect.Int:
+		for _, v := range intSeq {
+			value := reflect.ValueOf(int(v))
+			instance.Set(reflect.Append(*instance, value))
+		}
+	case reflect.Int8:
+		for _, v := range intSeq {
+			value := reflect.ValueOf(int8(v))
+			instance.Set(reflect.Append(*instance, value))
+		}
+	case reflect.Int16:
+		for _, v := range intSeq {
+			value := reflect.ValueOf(int16(v))
+			instance.Set(reflect.Append(*instance, value))
+		}
+	case reflect.Int32:
+		for _, v := range intSeq {
+			value := reflect.ValueOf(int32(v))
+			instance.Set(reflect.Append(*instance, value))
+		}
+	case reflect.Int64:
+		for _, v := range intSeq {
+			value := reflect.ValueOf(int64(v))
+			instance.Set(reflect.Append(*instance, value))
+		}
+	case reflect.Uint:
+		for _, v := range uintSeq {
+			value := reflect.ValueOf(uint(v))
+			instance.Set(reflect.Append(*instance, value))
+		}
+	case reflect.Uint8:
+		for _, v := range uintSeq {
+			value := reflect.ValueOf(uint8(v))
+			instance.Set(reflect.Append(*instance, value))
+		}
+	case reflect.Uint16:
+		for _, v := range uintSeq {
+			value := reflect.ValueOf(uint16(v))
+			instance.Set(reflect.Append(*instance, value))
+		}
+	case reflect.Uint32:
+		for _, v := range uintSeq {
+			value := reflect.ValueOf(uint32(v))
+			instance.Set(reflect.Append(*instance, value))
+		}
+	case reflect.Uint64:
+		for _, v := range uintSeq {
+			value := reflect.ValueOf(uint64(v))
+			instance.Set(reflect.Append(*instance, value))
+		}
+	case reflect.Float32:
+		for _, v := range floatSeq {
+			value := reflect.ValueOf(float32(v))
+			instance.Set(reflect.Append(*instance, value))
+		}
+	case reflect.Float64:
+		for _, v := range floatSeq {
+			value := reflect.ValueOf(float64(v))
+			instance.Set(reflect.Append(*instance, value))
+		}
+	case reflect.Bool:
+		for _, v := range boolSeq {
+			value := reflect.ValueOf(bool(v))
+			instance.Set(reflect.Append(*instance, value))
+		}
+	case reflect.String:
+		for _, v := range stringSeq {
+			value := reflect.ValueOf(string(v))
+			instance.Set(reflect.Append(*instance, value))
+		}
+
 	}
 
 	return nil

@@ -35,3 +35,9 @@ func Exists(keys ...string) bool {
 	}
 	return true
 }
+
+// Unmarshal extracts the contents of the environment and populates
+// the scope data structure.
+func Unmarshal(scope interface{}) error {
+	return decodeEnviron(scope)
+}

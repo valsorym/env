@@ -3,11 +3,14 @@ package env
 import (
 	"fmt"
 	"math"
+	"reflect"
 	"strconv"
 )
 
-// strToInt64 convert string to int64 type. Returns: result, error.
-// Returns default value for int64 type if value is empty.
+const FloatAccuracy = 1e-7
+
+// strToInt64 convert string to int64 type with checking for conversion
+// to int64 type. Returns default value for int type if value is empty.
 func strToInt64(value string) (int64, error) {
 	if len(value) == 0 {
 		return 0, nil
@@ -16,9 +19,9 @@ func strToInt64(value string) (int64, error) {
 	return strconv.ParseInt(value, 10, 64)
 }
 
-// strToInt32 convert string to int32 type. Returns: result, error.
-// Returns default value for int32 type if value is empty.
-func strToInt32(value string) (int32, error) {
+// strToInt32 convert string to int64 type with checking for conversion
+// to int32 type. Returns default value for int type if value is empty.
+func strToInt32(value string) (int64, error) {
 	r, err := strToInt64(value)
 	if err != nil {
 		return 0, err
@@ -28,12 +31,12 @@ func strToInt32(value string) (int32, error) {
 		return 0, fmt.Errorf("strToInt32: %d overflows int32", r)
 	}
 
-	return int32(r), err
+	return r, err
 }
 
-// strToInt16 convert string to int16 type. Returns: result, error.
-// Returns default value for int16 type if value is empty.
-func strToInt16(value string) (int16, error) {
+// strToInt16 convert string to int64 type with checking for conversion
+// to int16 type. Returns default value for int type if value is empty.
+func strToInt16(value string) (int64, error) {
 	r, err := strToInt64(value)
 	if err != nil {
 		return 0, err
@@ -43,12 +46,12 @@ func strToInt16(value string) (int16, error) {
 		return 0, fmt.Errorf("strToInt16: %d overflows int16", r)
 	}
 
-	return int16(r), err
+	return r, err
 }
 
-// strToInt8 convert string to int8 type. Returns: result, error.
-// Returns default value for int8 type if value is empty.
-func strToInt8(value string) (int8, error) {
+// strToInt8 convert string to int64 type with checking for conversion
+// to int8 type. Returns default value for int type if value is empty.
+func strToInt8(value string) (int64, error) {
 	r, err := strToInt64(value)
 	if err != nil {
 		return 0, err
@@ -58,12 +61,12 @@ func strToInt8(value string) (int8, error) {
 		return 0, fmt.Errorf("strToInt8: %d overflows int8", r)
 	}
 
-	return int8(r), err
+	return r, err
 }
 
-// strToInt convert string to int type. Returns: result, error.
-// Returns default value for int type if value is empty.
-func strToInt(value string) (int, error) {
+// strToInt convert string to int64 type with checking for conversion
+// to int type. Returns default value for int type if value is empty.
+func strToInt(value string) (int64, error) {
 	r, err := strToInt64(value)
 	if err != nil {
 		return 0, err
@@ -75,11 +78,34 @@ func strToInt(value string) (int, error) {
 		return 0, fmt.Errorf("strToInt: %d overflows int (int32)", r)
 	}
 
-	return int(r), err
+	return r, err
 }
 
-// strToUint64 convert string to uint64 type. Returns: result, error.
-// Returns default value for uint64 type if value is empty.
+// strToIntKind convert string to int64 type with checking for conversion
+// to intX type. Returns default value for int type if value is empty.
+//
+// The intX determined by reflect.Kind.
+func strToIntKind(value string, kind reflect.Kind) (r int64, err error) {
+	switch kind {
+	case reflect.Int:
+		r, err = strToInt(value)
+	case reflect.Int8:
+		r, err = strToInt8(value)
+	case reflect.Int16:
+		r, err = strToInt16(value)
+	case reflect.Int32:
+		r, err = strToInt32(value)
+	case reflect.Int64:
+		r, err = strToInt64(value)
+	default:
+		r, err = 0, fmt.Errorf("incorrect kind")
+	}
+
+	return
+}
+
+// strToUint64 convert string to uint64 type with checking for conversion
+// to uint64 type. Returns default value for uint type if value is empty.
 func strToUint64(value string) (uint64, error) {
 	if len(value) == 0 {
 		return 0, nil
@@ -88,9 +114,9 @@ func strToUint64(value string) (uint64, error) {
 	return strconv.ParseUint(value, 10, 64)
 }
 
-// strToUint32 convert string to uint32 type. Returns: result, error.
-// Returns default value for uint32 type if value is empty.
-func strToUint32(value string) (uint32, error) {
+// strToUint64 convert string to uint64 type with checking for conversion
+// to uint32 type. Returns default value for uint type if value is empty.
+func strToUint32(value string) (uint64, error) {
 	r, err := strToUint64(value)
 	if err != nil {
 		return 0, err
@@ -100,12 +126,12 @@ func strToUint32(value string) (uint32, error) {
 		return 0, fmt.Errorf("strToUint32: %d overflows uint32", r)
 	}
 
-	return uint32(r), err
+	return r, err
 }
 
-// strToUint16 convert string to uint16 type. Returns: result, error.
-// Returns default value for uint16 type if value is empty.
-func strToUint16(value string) (uint16, error) {
+// strToUint64 convert string to uint64 type with checking for conversion
+// to uint16 type. Returns default value for uint type if value is empty.
+func strToUint16(value string) (uint64, error) {
 	r, err := strToUint64(value)
 	if err != nil {
 		return 0, err
@@ -115,12 +141,12 @@ func strToUint16(value string) (uint16, error) {
 		return 0, fmt.Errorf("strToUint16: %d overflows uint16", r)
 	}
 
-	return uint16(r), err
+	return r, err
 }
 
-// strToInt8 convert string to int8 type. Returns: result, error.
-// Returns default value for int8 type if value is empty.
-func strToUint8(value string) (uint8, error) {
+// strToUint64 convert string to uint64 type with checking for conversion
+// to uint8 type. Returns default value for uint type if value is empty.
+func strToUint8(value string) (uint64, error) {
 	r, err := strToUint64(value)
 	if err != nil {
 		return 0, err
@@ -130,12 +156,12 @@ func strToUint8(value string) (uint8, error) {
 		return 0, fmt.Errorf("strToUint8: %d overflows uint8", r)
 	}
 
-	return uint8(r), err
+	return r, err
 }
 
-// strToUint convert string to int type. Returns: result, error.
-// Returns default value for uint type if value is empty.
-func strToUint(value string) (uint, error) {
+// strToUint convert string to uint64 type with checking for conversion
+// to uint type. Returns default value for uint type if value is empty.
+func strToUint(value string) (uint64, error) {
 	r, err := strToUint64(value)
 	if err != nil {
 		return 0, err
@@ -147,11 +173,34 @@ func strToUint(value string) (uint, error) {
 		return 0, fmt.Errorf("strToUint: %d overflows uint (uint32)", r)
 	}
 
-	return uint(r), err
+	return r, err
 }
 
-// strToFloat64 convert string to float64 type. Returns: result, error.
-// Returns default value for float64 type if value is empty.
+// strToUintKind convert string to uint64 type with checking for conversion
+// to uintX type. Returns default value for uint type if value is empty.
+//
+// The uintX determined by reflect.Kind.
+func strToUintKind(value string, kind reflect.Kind) (r uint64, err error) {
+	switch kind {
+	case reflect.Uint:
+		r, err = strToUint(value)
+	case reflect.Uint8:
+		r, err = strToUint8(value)
+	case reflect.Uint16:
+		r, err = strToUint16(value)
+	case reflect.Uint32:
+		r, err = strToUint32(value)
+	case reflect.Uint64:
+		r, err = strToUint64(value)
+	default:
+		r, err = 0, fmt.Errorf("incorrect kind")
+	}
+
+	return
+}
+
+// strToFloat64 convert string to float64 type with checking for conversion
+// to float64 type. Returns default value for float64 type if value is empty.
 func strToFloat64(value string) (float64, error) {
 	if len(value) == 0 {
 		return 0.0, nil
@@ -160,20 +209,37 @@ func strToFloat64(value string) (float64, error) {
 	return strconv.ParseFloat(value, 64)
 }
 
-// strToFloat32 convert string to float32 type. Returns: result, error.
-// Returns default value for float32 type if value is empty.
-func strToFloat32(value string) (float32, error) {
+// strToFloat32 convert string to float64 type with checking for conversion
+// to float32 type. Returns default value for float64 type if value is empty.
+func strToFloat32(value string) (float64, error) {
 	// Parse value from the environment.
 	r, err := strToFloat64(value)
 	if err != nil {
-		return float32(r), err
+		return r, err
 	}
 
 	if r > math.MaxFloat32 {
 		return 0, fmt.Errorf("strToFloat32: %f overflows float32", r)
 	}
 
-	return float32(r), nil
+	return r, nil
+}
+
+// strToFloatKind convert string to float64 type with checking for conversion
+// to floatX type. Returns default value for float64 type if value is empty.
+//
+// The floatX determined by reflect.Kind.
+func strToFloatKind(value string, kind reflect.Kind) (r float64, err error) {
+	switch kind {
+	case reflect.Float64:
+		r, err = strToFloat64(value)
+	case reflect.Float32:
+		r, err = strToFloat32(value)
+	default:
+		r, err = 0, fmt.Errorf("incorrect kind")
+	}
+
+	return
 }
 
 // strToBool convert string to bool type. Returns: result, error.
@@ -190,7 +256,7 @@ func strToBool(value string) (bool, error) {
 			return r, err
 		}
 
-		if math.Abs(f) > 1e-9 {
+		if math.Abs(f) > FloatAccuracy {
 			r = true
 		}
 	}

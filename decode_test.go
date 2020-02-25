@@ -253,9 +253,9 @@ func TestDeocdeEnvironString(t *testing.T) {
 	}
 }
 
-// TestDecodeEnvironSlice tests decodeEnviron function for
-// slice type with correct values.
-func TestDeocdeEnvironSlice(t *testing.T) {
+// TestDecodeEnvironSliceCorrect tests decodeEnviron function
+// for slice type with correct values.
+func TestDeocdeEnvironSliceCorrect(t *testing.T) {
 	var tests = map[string]string{
 		"KEY_INT":   "-30:-20:-10:0:10:20:30",
 		"KEY_INT8":  "-30:-20:-10:0:10:20:30",
@@ -290,7 +290,7 @@ func TestDeocdeEnvironSlice(t *testing.T) {
 
 		err := decodeEnviron(d)
 		if err != nil {
-			t.Error(err)
+			t.Error("xxxxxxxxxxxxxxxxxxxx:", err)
 		}
 
 		switch key {
@@ -351,6 +351,40 @@ func TestDeocdeEnvironSlice(t *testing.T) {
 			if r := toStr(d.KeyBool); r != value {
 				t.Errorf("KeyBoll == `%s` but need `%s`", r, value)
 			}
+		}
+	}
+}
+
+// TestDecodeEnvironSliceIncorrect tests decodeEnviron function
+// for slice type with correct values.
+func TestDeocdeEnvironSliceIncorrect(t *testing.T) {
+	var tests = map[string]string{
+		"KEY_INT":   "-30:-20:-10:A:10:20:30",
+		"KEY_INT8":  "-30:-20:-10:A:10:20:30",
+		"KEY_INT16": "-30:-20:-10:A:10:20:30",
+		"KEY_INT32": "-30:-20:-10:A:10:20:30",
+		"KEY_INT64": "-30:-20:-10:A:10:20:30",
+
+		"KEY_UINT":   "0:10:-20:30",
+		"KEY_UINT8":  "0:10:-20:30",
+		"KEY_UINT16": "0:10:-20:30",
+		"KEY_UINT32": "0:10:-20:30",
+		"KEY_UINT64": "0:10:-20:30",
+
+		"KEY_FLOAT32": "-3.1:-1.27:A:1.27:3.3",
+		"KEY_FLOAT64": "-3.1:-1.27:A:1.27:3.3",
+	}
+
+	// Testing.
+	for key, value := range tests {
+		var d = &DataSlice{}
+
+		Clear()
+		Set(key, value)
+
+		err := decodeEnviron(d)
+		if err == nil {
+			t.Error("must be error")
 		}
 	}
 }
