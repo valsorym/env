@@ -52,6 +52,8 @@ type toDataSlice struct {
 // TestParseTag tests parseTag function.
 func TestParseTag(t *testing.T) {
 	var tests = [][]string{
+		//       tagValue, defaultName, defaultSep
+		[]string{"", "HOST", " ", "HOST", " "},
 		[]string{"HOST", "host", " ", "HOST", " "},
 		[]string{"PATHS,:", "paths", " ", "PATHS", ":"},
 		[]string{",:", "PORT", " ", "PORT", ":"},
