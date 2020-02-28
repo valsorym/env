@@ -3,10 +3,173 @@ package env
 import (
 	"fmt"
 	"math"
+	"reflect"
 	"strconv"
 	"testing"
 )
 
+type IntUintFloat struct {
+	Value   string
+	Control string
+	Correct bool
+	Kind    reflect.Kind
+}
+
+// TestStrToIntKind ...
+func TestStrToIntKind(t *testing.T) {
+	var (
+		tests    []IntUintFloat
+		maxInt   string = fmt.Sprintf("%d", math.MaxInt64-1)
+		maxInt8  string = fmt.Sprintf("%d", math.MaxInt8-1)
+		maxInt16 string = fmt.Sprintf("%d", math.MaxInt16-1)
+		maxInt32 string = fmt.Sprintf("%d", math.MaxInt32-1)
+		maxInt64 string = fmt.Sprintf("%d", math.MaxInt64-1)
+	)
+
+	// For 32-bit platform.
+	if strconv.IntSize == 32 {
+		maxInt = maxInt32
+	}
+
+	// Test data.
+	tests = []IntUintFloat{
+		IntUintFloat{"", "0", true, reflect.Int},
+		IntUintFloat{"0", "0", true, reflect.Int},
+		IntUintFloat{"-3", "-3", true, reflect.Int},
+		IntUintFloat{"3", "3", true, reflect.Int},
+
+		IntUintFloat{"-128", "-128", true, reflect.Int8},
+		IntUintFloat{"127", "127", true, reflect.Int8},
+
+		IntUintFloat{maxInt, maxInt, true, reflect.Int},
+		IntUintFloat{maxInt8, maxInt8, true, reflect.Int8},
+		IntUintFloat{maxInt16, maxInt16, true, reflect.Int16},
+		IntUintFloat{maxInt32, maxInt32, true, reflect.Int32},
+		IntUintFloat{maxInt64, maxInt64, true, reflect.Int64},
+
+		IntUintFloat{"string", "0", false, reflect.Int},
+		IntUintFloat{maxInt + "1", "0", false, reflect.Int},
+		IntUintFloat{maxInt8 + "1", "0", false, reflect.Int8},
+		IntUintFloat{"-129", "0", false, reflect.Int8},
+		IntUintFloat{"128", "0", false, reflect.Int8},
+		IntUintFloat{maxInt16 + "1", "0", false, reflect.Int16},
+		IntUintFloat{maxInt32 + "1", "0", false, reflect.Int32},
+		IntUintFloat{maxInt64 + "1", "0", false, reflect.Int64},
+	}
+
+	// Test correct values.
+	for _, data := range tests {
+		r, err := strToIntKind(data.Value, data.Kind)
+		if data.Correct && err != nil {
+			t.Error(err)
+		} else if !data.Correct && err == nil {
+			t.Errorf("the value %s should throw an exception", data.Value)
+		} else if err != nil && r != 0 {
+			t.Errorf("any error should return zero but returns %v", r)
+		}
+
+		control := fmt.Sprintf("%d", int64(r))
+		if control != data.Control {
+			t.Errorf("expected %s but returns %s", data.Control, control)
+		}
+	}
+}
+
+// TestStrToUintKind ...
+func TestStrToUintKind(t *testing.T) {
+	var (
+		tests     []IntUintFloat
+		maxUint   string = "18446744073709551614"
+		maxUint8  string = fmt.Sprintf("%d", math.MaxUint8-1)
+		maxUint16 string = fmt.Sprintf("%d", math.MaxUint16-1)
+		maxUint32 string = fmt.Sprintf("%d", math.MaxUint32-1)
+		maxUint64 string = "18446744073709551614"
+	)
+
+	// For 32-bit platform.
+	if strconv.IntSize == 32 {
+		maxUint = maxUint32
+	}
+
+	// Test data.
+	tests = []IntUintFloat{
+		IntUintFloat{"", "0", true, reflect.Uint},
+		IntUintFloat{"0", "0", true, reflect.Uint},
+		IntUintFloat{"3", "3", true, reflect.Uint},
+		IntUintFloat{maxUint, maxUint, true, reflect.Uint},
+		IntUintFloat{maxUint8, maxUint8, true, reflect.Uint8},
+		IntUintFloat{maxUint16, maxUint16, true, reflect.Uint16},
+		IntUintFloat{maxUint32, maxUint32, true, reflect.Uint32},
+		IntUintFloat{maxUint64, maxUint64, true, reflect.Uint64},
+
+		IntUintFloat{"string", "0", false, reflect.Uint},
+		IntUintFloat{"-3", "0", false, reflect.Uint},
+		IntUintFloat{maxUint + "1", "0", false, reflect.Uint},
+		IntUintFloat{maxUint8 + "1", "0", false, reflect.Uint8},
+		IntUintFloat{maxUint16 + "1", "0", false, reflect.Uint16},
+		IntUintFloat{maxUint32 + "1", "0", false, reflect.Uint32},
+		IntUintFloat{maxUint64 + "1", "0", false, reflect.Uint64},
+	}
+
+	// Test correct values.
+	for _, data := range tests {
+		r, err := strToUintKind(data.Value, data.Kind)
+		if data.Correct && err != nil {
+			t.Error(err)
+		} else if !data.Correct && err == nil {
+			t.Errorf("the value %s should throw an exception", data.Value)
+		} else if err != nil && r != 0 {
+			t.Errorf("any error should return zero but returns %v", r)
+		}
+
+		control := fmt.Sprintf("%d", uint64(r))
+		if control != data.Control {
+			t.Errorf("expected %s but generated %s", data.Control, control)
+		}
+	}
+}
+
+// TestStrToFloatKind ...
+func TestStrToFloatKind(t *testing.T) {
+	var (
+		tests      []IntUintFloat
+		maxFloat32 string = fmt.Sprintf("%.2f", math.MaxFloat32-1)
+		maxFloat64 string = fmt.Sprintf("%.2f", math.MaxFloat64-1)
+	)
+
+	// Test data.
+	tests = []IntUintFloat{
+		IntUintFloat{"", "0.00", true, reflect.Float64},
+		IntUintFloat{"0.0", "0.00", true, reflect.Float64},
+		IntUintFloat{"3.0", "3.00", true, reflect.Float64},
+		IntUintFloat{"-3.1", "-3.10", true, reflect.Float64},
+		IntUintFloat{maxFloat32, maxFloat32, true, reflect.Float32},
+		IntUintFloat{maxFloat64, maxFloat64, true, reflect.Float64},
+
+		IntUintFloat{"string", "0.00", false, reflect.Float64},
+		//IntUintFloat{maxFloat32 + "1", "0.00", false, reflect.Float32},
+		//IntUintFloat{maxFloat64 + "1", "0.00", false, reflect.Float64},
+	}
+
+	// Test correct values.
+	for _, data := range tests {
+		r, err := strToFloatKind(data.Value, data.Kind)
+		if data.Correct && err != nil {
+			t.Error(err)
+		} else if !data.Correct && err == nil {
+			t.Errorf("the value %s should throw an exception", data.Value)
+		} else if err != nil && r != 0 {
+			t.Errorf("any error should return zero but returns %v", r)
+		}
+
+		control := fmt.Sprintf("%.2f", float64(r))
+		if control != data.Control {
+			t.Errorf("expected %s but generated %s", data.Control, control)
+		}
+	}
+}
+
+/*
 // TestStrToInt64Correct tests strToInt64 function for correct values.
 func TestStrToInt64Coreect(t *testing.T) {
 	var tests = map[string]int64{
@@ -571,3 +734,4 @@ func TestStrToBoolIncorrect(t *testing.T) {
 		}
 	}
 }
+*/
