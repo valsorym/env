@@ -48,7 +48,8 @@ PROBLEM:
 -------------------------------------------------------------------------------
 ID:     0005
 TITLE:  Add Decode function.
-STATUS: PROCESS
+STATUS: DONE
+NOTE: Added Unmarshal method.
 PROBLEM:
     For example:
     env-file:
@@ -71,4 +72,15 @@ PROBLEM:
     c.Host     // localhost
     c.Port     // 8080
     c.PathList // []string{"/first/path", "/second/path"}
-
+-------------------------------------------------------------------------------
+ID:     0006
+TITLE:  Add Marshal method.
+STATUS: PROCESS
+PROBLEM:
+    Put structure fields into environment - the opposite of Unmarshal func.
+-------------------------------------------------------------------------------
+ID:     0007
+TITLE:  Doc.
+STATUS: ...
+PROBLEM:
+    Add usage examples...
