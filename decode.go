@@ -6,8 +6,6 @@ import (
 	"strings"
 )
 
-const TagName = "env"
-
 // parseTag returns tag parameters as [NAME[, SEP]] where
 //     NAME variable name in the environment;
 //     SEP  separator for the list (only for arrays and slices).
@@ -34,12 +32,12 @@ func parseTag(tagValue, defaultName, defaultSep string) (name, sep string) {
 	return
 }
 
-// decodeEnviron gets variables from the environment and sets them by
+// unmarshalENV gets variables from the environment and sets them by
 // pointer into scope. Returns an error if something went wrong.
 //
 // Supported types: Int, Int8, Int16, Int32, Int64, Uint, Uint8, Uint16,
 // Uint32, Uint64, Bool, Float32, Float64, String, Array, Slice.
-func decodeEnviron(scope interface{}) error {
+func unmarshalENV(scope interface{}) error {
 	var rv reflect.Value
 
 	// The object must be a pointer.
@@ -50,10 +48,16 @@ func decodeEnviron(scope interface{}) error {
 			"in argument to decode", t, t)
 	}
 
-	// Get the value of an object.
-	rv = rv.Elem()
+	// Call custom UnmarshalENV method.
+	if rv.Elem().Kind() != reflect.Struct {
+		return fmt.Errorf("recipient must be initialized struct")
+	} else if cue := rv.MethodByName("UnmarshalENV"); cue.IsValid() {
+		// If the structure has a custom MethodByName method.
+		cue.Call([]reflect.Value{})
+	}
 
 	// Walk through all the fields of the transferred object.
+	rv = rv.Elem()
 	for i := 0; i < rv.NumField(); i++ {
 		field := rv.Type().Field(i)
 		name, sep := parseTag(field.Tag.Get(TagName), field.Name, " ")
@@ -109,7 +113,8 @@ func decodeEnviron(scope interface{}) error {
 }
 
 // setSlice sets slice into instance.
-func setSlice(instance *reflect.Value, seq []string, kind reflect.Kind) (err error) {
+func setSlice(instance *reflect.Value,
+	seq []string, kind reflect.Kind) (err error) {
 	var (
 		intSeq    []int64
 		uintSeq   []uint64
@@ -242,7 +247,6 @@ func setSlice(instance *reflect.Value, seq []string, kind reflect.Kind) (err err
 			value := reflect.ValueOf(string(v))
 			instance.Set(reflect.Append(*instance, value))
 		}
-
 	}
 
 	return nil

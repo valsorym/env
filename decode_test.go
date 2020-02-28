@@ -6,13 +6,7 @@ import (
 	"testing"
 )
 
-type Data struct {
-	Host  string `env:"HOST"`
-	Port  uint   `env:"PORT,"`
-	Paths string `env:"PATH,:"`
-}
-
-type DataNumber struct {
+type toDataNumber struct {
 	KeyInt     int     `env:"KEY_INT"`
 	KeyInt8    int8    `env:"KEY_INT8"`
 	KeyInt16   int16   `env:"KEY_INT16"`
@@ -27,15 +21,15 @@ type DataNumber struct {
 	KeyFloat64 float64 `env:"KEY_FLOAT64"`
 }
 
-type DataBool struct {
+type toDataBool struct {
 	KeyBool bool `env:"KEY_BOOL"`
 }
 
-type DataString struct {
+type toDataString struct {
 	KeyString string `env:"KEY_STRING"`
 }
 
-type DataSlice struct {
+type toDataSlice struct {
 	KeyInt   []int   `env:"KEY_INT,:"`
 	KeyInt8  []int8  `env:"KEY_INT8,:"`
 	KeyInt16 []int16 `env:"KEY_INT16,:"`
@@ -76,9 +70,9 @@ func TestParseTag(t *testing.T) {
 	}
 }
 
-// TestDecodeEnvironNumber tests decodeEnviron function
+// TestUnmarshalENVNumber tests unmarshalENV function
 // for Int, Uint and Float types.
-func TestDeocdeEnvironNumber(t *testing.T) {
+func TestUnmarshalENVNumber(t *testing.T) {
 	var max = "922337203685477580777"
 	var tests = map[string][]string{
 		"KEY_INT":     []string{"2", "-2", max},
@@ -98,12 +92,12 @@ func TestDeocdeEnvironNumber(t *testing.T) {
 	// Correct value.
 	for i := 0; i < 3; i++ {
 		for key, data := range tests {
-			var d = &DataNumber{}
+			var d = &toDataNumber{}
 
 			Clear()
 			Set(key, data[i])
 
-			err := decodeEnviron(d)
+			err := unmarshalENV(d)
 			switch i {
 			case 0:
 				if err != nil {
@@ -179,8 +173,8 @@ func TestDeocdeEnvironNumber(t *testing.T) {
 	}
 }
 
-// TestDecodeEnvironBoll tests decodeEnviron function for bool type.
-func TestDeocdeEnvironBool(t *testing.T) {
+// TestUnmarshalENVBoll tests unmarshalENV function for bool type.
+func TestUnmarshalENVBool(t *testing.T) {
 	var tests = map[string]bool{
 		"true":  true,
 		"false": false,
@@ -195,12 +189,12 @@ func TestDeocdeEnvironBool(t *testing.T) {
 
 	// Test correct values.
 	for value, test := range tests {
-		var d = &DataBool{}
+		var d = &toDataBool{}
 
 		Clear()
 		Set("KEY_BOOL", value)
 
-		err := decodeEnviron(d)
+		err := unmarshalENV(d)
 		if err != nil {
 			t.Error(err)
 		}
@@ -212,20 +206,20 @@ func TestDeocdeEnvironBool(t *testing.T) {
 
 	// Incorrect value.
 	for _, value := range []string{"string", "0.d", "true/false"} {
-		var d = &DataBool{}
+		var d = &toDataBool{}
 
 		Clear()
 		Set("KEY_BOOL", value)
 
-		err := decodeEnviron(d)
+		err := unmarshalENV(d)
 		if err == nil {
 			t.Error("didn't handle the error")
 		}
 	}
 }
 
-// TestDecodeEnvironString tests decodeEnviron function for string type.
-func TestDeocdeEnvironString(t *testing.T) {
+// TestUnmarshalENVString tests unmarshalENV function for string type.
+func TestUnmarshalENVString(t *testing.T) {
 	var tests = []interface{}{
 		8080,
 		"Hello World",
@@ -236,13 +230,13 @@ func TestDeocdeEnvironString(t *testing.T) {
 
 	// Test correct values.
 	for _, test := range tests {
-		var d = &DataString{}
+		var d = &toDataString{}
 		var s = fmt.Sprintf("%v", test)
 
 		Clear()
 		Set("KEY_STRING", s)
 
-		err := decodeEnviron(d)
+		err := unmarshalENV(d)
 		if err != nil {
 			t.Error(err)
 		}
@@ -253,9 +247,9 @@ func TestDeocdeEnvironString(t *testing.T) {
 	}
 }
 
-// TestDecodeEnvironSliceCorrect tests decodeEnviron function
+// TestUnmarshalENVSliceCorrect tests unmarshalENV function
 // for slice type with correct values.
-func TestDeocdeEnvironSliceCorrect(t *testing.T) {
+func TestUnmarshalENVSliceCorrect(t *testing.T) {
 	var tests = map[string]string{
 		"KEY_INT":   "-30:-20:-10:0:10:20:30",
 		"KEY_INT8":  "-30:-20:-10:0:10:20:30",
@@ -283,12 +277,12 @@ func TestDeocdeEnvironSliceCorrect(t *testing.T) {
 
 	// Testing.
 	for key, value := range tests {
-		var d = &DataSlice{}
+		var d = &toDataSlice{}
 
 		Clear()
 		Set(key, value)
 
-		err := decodeEnviron(d)
+		err := unmarshalENV(d)
 		if err != nil {
 			t.Error("xxxxxxxxxxxxxxxxxxxx:", err)
 		}
@@ -355,9 +349,9 @@ func TestDeocdeEnvironSliceCorrect(t *testing.T) {
 	}
 }
 
-// TestDecodeEnvironSliceIncorrect tests decodeEnviron function
+// TestUnmarshalENVSliceIncorrect tests unmarshalENV function
 // for slice type with correct values.
-func TestDeocdeEnvironSliceIncorrect(t *testing.T) {
+func TestUnmarshalENVSliceIncorrect(t *testing.T) {
 	var tests = map[string]string{
 		"KEY_INT":   "-30:-20:-10:A:10:20:30",
 		"KEY_INT8":  "-30:-20:-10:A:10:20:30",
@@ -377,12 +371,12 @@ func TestDeocdeEnvironSliceIncorrect(t *testing.T) {
 
 	// Testing.
 	for key, value := range tests {
-		var d = &DataSlice{}
+		var d = &toDataSlice{}
 
 		Clear()
 		Set(key, value)
 
-		err := decodeEnviron(d)
+		err := unmarshalENV(d)
 		if err == nil {
 			t.Error("must be error")
 		}
