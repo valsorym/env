@@ -55,7 +55,7 @@ func main() {
 	var config = &Config{}
 
 	// Update configurations in an environment, loads from the fiel.
-	// P.s. You can skip this step If the necessary data is manually
+	// P.s. You can skip this step if the necessary data is manually
 	//      setuped in the environment.
 	env.Update("./config.env")
 
@@ -68,6 +68,8 @@ func main() {
 	http.ListenAndServe(fmt.Sprintf("%s:%d", config.Host, config.Port), nil)
 }
 ```
+
+Open your browser as: http://localhost:8080/
 
 ## Get
 
