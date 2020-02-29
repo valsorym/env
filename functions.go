@@ -12,7 +12,7 @@ import "os"
 //
 // Suppose that the some value was set into environment as:
 //
-//    goloop$ export KEY_0=VALUE_X
+//    $ export KEY_0=VALUE_X
 //
 // And there is .env file with data:
 //
@@ -62,7 +62,7 @@ func Load(filename string) error {
 //
 // Suppose that the some value was set into environment as:
 //
-//    goloop$ export KEY_0=VALUE_X
+//    $ export KEY_0=VALUE_X
 //
 // And there is .env file with data:
 //
@@ -112,7 +112,7 @@ func LoadSafe(filename string) error {
 //
 // Suppose that the some value was set into environment as:
 //
-//    goloop$ export KEY_0=VALUE_X
+//    $ export KEY_0=VALUE_X
 //
 // And there is .env file with data:
 //
@@ -162,7 +162,7 @@ func Update(filename string) error {
 //
 // Suppose that the some value was set into environment as:
 //
-//    goloop$ export KEY_0=VALUE_X
+//    $ export KEY_0=VALUE_X
 //
 // And there is .env file with data:
 //
@@ -207,7 +207,7 @@ func UpdateSafe(filename string) error {
 //
 // Suppose that the some value was set into environment as:
 //
-//    goloop$ export KEY_0=VALUE_X
+//    $ export KEY_0=VALUE_X
 //
 // And there is .env file with data:
 //
@@ -239,17 +239,70 @@ func Exists(keys ...string) bool {
 	return true
 }
 
-// Unmarshal parses the environment data and stores the result in the value
-// pointed to by scope. If scope is nil or not a pointer, Unmarshal returns
-// an error.
+// Unmarshal to parses the environment data and stores the result in the value
+// pointed to by scope. If scope isn't struct, not a pointer or is nil -
+// returns an error.
 //
 // Supports the following field types: int, int8, int16, int32, int64, uin,
 // uint8, uin16, uint32, uin64, float32, float64, string, bool and slice
-// from thous types.
+// from thous types. For other filed's types will be returned an error.
 //
-// To unmarshal environment into a value implementing the
-// Unmarshaler interface, Unmarshal can to calls the
-// custom UnmarshalENV method.
+// If the structure contains a custom UnmarshalENV method - custom method
+// will be called.
+//
+// Structure fields may have a `env` tag as `env:"KEY[,SEP]"` where:
+//
+//    KEY - matches the name of the key in the environment;
+//    SEP - optional argument, sets the separator for lists (default: space).
+//
+// Suppose that the some values was set into environment as:
+//
+//    $ export HOST="0.0.0.0"
+//    $ export PORT=8080
+//    $ export ALLOWED_HOSTS=localhost:127.0.0.1
+//    $ export SECRET_KEY=AgBsdjONL53IKa33LM9SNROvD3hZXfoz
+//
+// Structure example:
+//
+//    // Config structure for containing values from the environment.
+//    // P.s. No need to describe all the keys that are in the environment,
+//    // for example, we ignore the SECRET_KEY key.
+//    type Config struct {
+//        Host         string   `env:"HOST"`
+//        Port         int      `env:"PORT"`
+//        AllowedHosts []string `env:"ALLOWED_HOSTS,:"`
+//    }
+//
+// Unmarshal data from the environment into Config struct.
+//
+//    // Important: pointer to initialized structure!
+//    var config *Config = &Config{}
+//
+//    err := env.Unmarshal(config)
+//    if err != nil {
+//        // something went wrong
+//    }
+//
+//    config.Host         // "0.0.0.0"
+//    config.Port         // 8080
+//    config.AllowedHosts // []string{"localhost", "127.0.0.1"}
+//
+// If the structure will havs custom UnmarshalENV - it will be called:
+//
+//    // UnmarshalENV it's custom method for unmarshalling.
+//    func (c *Config) UnmarshalENV() error {
+//        c.Host = "192.161.0.1"
+//        c.Port = 80
+//        c.AllowedHosts = []string{"192.168.0.1"}
+//
+//        return nil
+//    }
+//
+//    // The result will be the data that sets in the custom
+//    // unmarshalling method.
+//    config.Host         // "192.161.0.1"
+//    config.Port         // 80
+//    config.AllowedHosts // []string{"192.161.0.1"}
 func Unmarshal(scope interface{}) error {
 	return unmarshalENV(scope)
 }
