@@ -6,25 +6,54 @@ import (
 	"strings"
 )
 
+/*
+ var ptr reflect.Value
+    var value reflect.Value
+    var finalMethod reflect.Value
+
+    value = reflect.ValueOf(i)
+
+    // if we start with a pointer, we need to get value pointed to
+    // if we start with a value, we need to get a pointer to that value
+    if value.Type().Kind() == reflect.Ptr {
+        ptr = value
+        value = ptr.Elem()
+    } else {
+        ptr = reflect.New(reflect.TypeOf(i))
+        temp := ptr.Elem()
+        temp.Set(value)
+    }
+*/
+
 // marshalENV ...
 func marshalENV(scope interface{}) error {
 	var (
-		rt = reflect.TypeOf(scope)
-		rv = reflect.ValueOf(scope)
+		rt reflect.Type  // type
+		rv reflect.Value // value
+		rp reflect.Value // pointer
 	)
 
-	// For pointer return real object.
+	// Define: type, value and pointer.
+	rt = reflect.TypeOf(scope)
+	rv = reflect.ValueOf(scope)
 	if rt.Kind() == reflect.Ptr {
-		rt, rv = rt.Elem(), rv.Elem()
+		rp, rt, rv = rv, rt.Elem(), rv.Elem()
+	} else {
+		rp = reflect.New(reflect.TypeOf(scope))
+		temp := rp.Elem()
+		temp.Set(rv)
 	}
 
-	// Value must be a structure.
-	if rv.Kind() != reflect.Struct {
-		return fmt.Errorf("value must be initialized struct")
+	// Scope validation.
+	switch {
+	case rt.Kind() != reflect.Struct:
+		return fmt.Errorf("object must be a structure")
+	case !rv.IsValid():
+		return fmt.Errorf("object must be initialized")
 	}
 
 	// If there is the custom method, MarshlaENV - run it.
-	if m := reflect.New(rt).MethodByName("MarshalENV"); m.IsValid() {
+	if m := rp.MethodByName("MarshalENV"); m.IsValid() {
 		result := m.Call([]reflect.Value{})
 		if len(result) != 0 {
 			err := result[0].Interface()
@@ -66,7 +95,7 @@ func marshalENV(scope interface{}) error {
 
 		// Set into environment.
 		Set(key, value)
-		fmt.Println(key, value)
+		//fmt.Println(key, value)
 	} // for
 
 	return nil

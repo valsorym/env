@@ -47,7 +47,24 @@ func Unmarshal(scope interface{}) error {
 //
 // Returns nil or error if there are problems with marshaling.
 //
+//    type Config struct {
+//        Host          string   `env:"HOST"`
+//        Port          int      `env:"PORT"`
+//        AllowedHosts  []string `env:"ALLOWED_HOSTS,:"`
+//    }
 //
+//    // ...
+//    var c = &Config{"0.0.0.0", 8080, []string{"localhost", "127.0.0.1"}}
+//    err := env.Marshal(c)
+//    if err != nil {
+//        // problem with marshaling
+//    }
+//
+//    // ...
+//    // Result:
+//    // HOST="0.0.0.0"
+//    // PORT=8080
+//    // ALLOWED_HOSTS="localhost:127.0.0.1"
 //
 // Supports the following field types: int, int8, int16, int32, int64, uin,
 // uint8, uin16, uint32, uin64, float32, float64, string, bool and slice
@@ -55,6 +72,33 @@ func Unmarshal(scope interface{}) error {
 //
 // If object has MarshalENV and isn't a nil pointer, Marshal calls its
 // MarshalENV method to scope convertation.
+//
+//    type Config struct {
+//        Host         string   `env:"HOST"`
+//        Port         int      `env:"PORT"`
+//        AllowedHosts []string `env:"ALLOWED_HOSTS,:"`
+//    }
+//
+//    func (c *Config) MarshalENV() error {
+//        str := strings.Replace(fmt.Sprint(c.AllowedHosts), " ", ":", -1)
+//        os.Setenv("SERVER_ALLOWED_HOSTS", strings.Trim(str, "[]"))
+//        os.Setenv("SERVER_PORT", fmt.Sprintf("%d", c.Port))
+//        os.Setenv("SERVER_HOST", c.Host)
+//        return nil
+//    }
+//
+//    // ...
+//    var c = &Config{"0.0.0.0", 8080, []string{"localhost", "127.0.0.1"}}
+//    err := env.Marshal(c)
+//    if err != nil {
+//        // problem with marshaling
+//    }
+//
+//    // ...
+//    // Result:
+//    // SERVER_HOST="0.0.0.0"
+//    // SERVER_PORT=8080
+//    // SERVER_ALLOWED_HOSTS="localhost:127.0.0.1"
 func Marshal(scope interface{}) error {
 	return marshalENV(scope)
 }
