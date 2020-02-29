@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-type toDataNumber struct {
+type TestDataNumber struct {
 	KeyInt     int     `env:"KEY_INT"`
 	KeyInt8    int8    `env:"KEY_INT8"`
 	KeyInt16   int16   `env:"KEY_INT16"`
@@ -21,15 +21,15 @@ type toDataNumber struct {
 	KeyFloat64 float64 `env:"KEY_FLOAT64"`
 }
 
-type toDataBool struct {
+type TestDataBool struct {
 	KeyBool bool `env:"KEY_BOOL"`
 }
 
-type toDataString struct {
+type TestDataString struct {
 	KeyString string `env:"KEY_STRING"`
 }
 
-type toDataSlice struct {
+type TestDataSlice struct {
 	KeyInt   []int   `env:"KEY_INT,:"`
 	KeyInt8  []int8  `env:"KEY_INT8,:"`
 	KeyInt16 []int16 `env:"KEY_INT16,:"`
@@ -94,7 +94,7 @@ func TestUnmarshalENVNumber(t *testing.T) {
 	// Correct value.
 	for i := 0; i < 3; i++ {
 		for key, data := range tests {
-			var d = &toDataNumber{}
+			var d = &TestDataNumber{}
 
 			Clear()
 			Set(key, data[i])
@@ -191,7 +191,7 @@ func TestUnmarshalENVBool(t *testing.T) {
 
 	// Test correct values.
 	for value, test := range tests {
-		var d = &toDataBool{}
+		var d = &TestDataBool{}
 
 		Clear()
 		Set("KEY_BOOL", value)
@@ -208,7 +208,7 @@ func TestUnmarshalENVBool(t *testing.T) {
 
 	// Incorrect value.
 	for _, value := range []string{"string", "0.d", "true/false"} {
-		var d = &toDataBool{}
+		var d = &TestDataBool{}
 
 		Clear()
 		Set("KEY_BOOL", value)
@@ -232,7 +232,7 @@ func TestUnmarshalENVString(t *testing.T) {
 
 	// Test correct values.
 	for _, test := range tests {
-		var d = &toDataString{}
+		var d = &TestDataString{}
 		var s = fmt.Sprintf("%v", test)
 
 		Clear()
@@ -279,7 +279,7 @@ func TestUnmarshalENVSliceCorrect(t *testing.T) {
 
 	// Testing.
 	for key, value := range tests {
-		var d = &toDataSlice{}
+		var d = &TestDataSlice{}
 
 		Clear()
 		Set(key, value)
@@ -373,7 +373,7 @@ func TestUnmarshalENVSliceIncorrect(t *testing.T) {
 
 	// Testing.
 	for key, value := range tests {
-		var d = &toDataSlice{}
+		var d = &TestDataSlice{}
 
 		Clear()
 		Set(key, value)
