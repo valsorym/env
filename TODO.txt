@@ -75,7 +75,7 @@ PROBLEM:
 -------------------------------------------------------------------------------
 ID:     0006
 TITLE:  Add Marshal method.
-STATUS: PROCESS
+STATUS: DONE
 PROBLEM:
     Put structure fields into environment - the opposite of Unmarshal func.
 -------------------------------------------------------------------------------
@@ -84,3 +84,10 @@ TITLE:  Doc.
 STATUS: ...
 PROBLEM:
     Add usage examples...
+-------------------------------------------------------------------------------
+ID:     0008
+TITLE:  Standardize exception.
+STATUS: ...
+PROBLEM:
+    Create error.go module with classification of possible errors.
+    Use them when throwing exceptions.
