@@ -41,3 +41,8 @@ func Exists(keys ...string) bool {
 func Unmarshal(scope interface{}) error {
 	return unmarshalENV(scope)
 }
+
+// Marshal ...
+func Marshal(scope interface{}) error {
+	return marshalENV(scope)
+}

@@ -60,7 +60,7 @@ func unmarshalENV(scope interface{}) error {
 	rv = rv.Elem()
 	for i := 0; i < rv.NumField(); i++ {
 		field := rv.Type().Field(i)
-		name, sep := parseTag(field.Tag.Get(TagName), field.Name, " ")
+		name, sep := parseTag(field.Tag.Get("env"), field.Name, " ")
 
 		// Change value.
 		instance := rv.FieldByName(field.Name)

@@ -128,6 +128,8 @@ func strToFloatKind(value string, kind reflect.Kind) (r float64, err error) {
 // strToBool convert string to bool type. Returns: result, error.
 // Returns default value for bool type if value is empty.
 func strToBool(value string) (bool, error) {
+	var epsilon = math.Nextafter(1, 2) - 1
+
 	// For empty string returns false.
 	if len(value) == 0 {
 		return false, nil
@@ -140,7 +142,7 @@ func strToBool(value string) (bool, error) {
 			return r, errB
 		}
 
-		if math.Abs(f) > FloatAccuracy {
+		if math.Abs(f) > epsilon {
 			r = true
 		}
 	}
