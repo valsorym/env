@@ -10,12 +10,14 @@ import (
 //
 // Supported types: int, int8, int16, int32, int64, uint, uint8, uint16,
 // uint32, uint64, bool, float32, float64, string, and slice from thous types.
-func marshalENV(scope interface{}) error {
+func marshalENV(scope interface{}) (map[string]string, error) {
 	var (
 		rt reflect.Type  // type
 		rv reflect.Value // value
 		rp reflect.Value // pointer
 	)
+
+	result := make(map[string]string)
 
 	// Define: type, value and pointer.
 	rt = reflect.TypeOf(scope)
@@ -31,21 +33,21 @@ func marshalENV(scope interface{}) error {
 	// Scope validation.
 	switch {
 	case rt.Kind() != reflect.Struct:
-		return fmt.Errorf("object must be a structure")
+		return result, fmt.Errorf("object must be a structure")
 	case !rv.IsValid():
-		return fmt.Errorf("object must be initialized")
+		return result, fmt.Errorf("object must be initialized")
 	}
 
 	// If there is the custom method, MarshlaENV - run it.
 	if m := rp.MethodByName("MarshalENV"); m.IsValid() {
-		result := m.Call([]reflect.Value{})
-		if len(result) != 0 {
-			err := result[0].Interface()
+		tmp := m.Call([]reflect.Value{})
+		if len(tmp) != 0 {
+			err := tmp[0].Interface()
 			if err != nil {
-				return fmt.Errorf("marshal: %v", err)
+				return result, fmt.Errorf("marshal: %v", err)
 			}
 		}
-		return nil
+		return result, nil
 	}
 
 	// Walk through the fields.
@@ -74,13 +76,13 @@ func marshalENV(scope interface{}) error {
 			str := strings.Replace(fmt.Sprint(instance), " ", sep, -1)
 			value = strings.Trim(str, "[]")
 		default:
-			return fmt.Errorf("incorrect type")
+			return result, fmt.Errorf("incorrect type")
 		} // switch
 
 		// Set into environment.
 		Set(key, value)
-		//fmt.Println(key, value)
+		result[key] = value
 	} // for
 
-	return nil
+	return result, nil
 }

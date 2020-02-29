@@ -38,9 +38,9 @@ func unmarshalENV(scope interface{}) error {
 
 	// If there is the custom method, MarshlaENV - run it.
 	if m := rp.MethodByName("UnmarshalENV"); m.IsValid() {
-		result := m.Call([]reflect.Value{})
-		if len(result) != 0 {
-			err := result[0].Interface()
+		tmp := m.Call([]reflect.Value{})
+		if len(tmp) != 0 {
+			err := tmp[0].Interface()
 			if err != nil {
 				return fmt.Errorf("marshal: %v", err)
 			}

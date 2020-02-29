@@ -64,7 +64,7 @@ func Unmarshal(scope interface{}) error {
 //
 //    // ...
 //    var c = &Config{"0.0.0.0", 8080, []string{"localhost", "127.0.0.1"}}
-//    err := env.Marshal(c)
+//    _, err := env.Marshal(c)
 //    if err != nil {
 //        // problem with marshaling
 //    }
@@ -98,7 +98,7 @@ func Unmarshal(scope interface{}) error {
 //
 //    // ...
 //    var c = &Config{"0.0.0.0", 8080, []string{"localhost", "127.0.0.1"}}
-//    err := env.Marshal(c)
+//    _, err := env.Marshal(c)
 //    if err != nil {
 //        // problem with marshaling
 //    }
@@ -108,6 +108,6 @@ func Unmarshal(scope interface{}) error {
 //    // SERVER_HOST="0.0.0.0"
 //    // SERVER_PORT=8080
 //    // SERVER_ALLOWED_HOSTS="localhost:127.0.0.1"
-func Marshal(scope interface{}) error {
+func Marshal(scope interface{}) (map[string]string, error) {
 	return marshalENV(scope)
 }

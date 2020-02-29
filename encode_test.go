@@ -30,7 +30,7 @@ func (c *ConfigExtended) MarshalENV() error {
 // TestMarshal ...
 func TestMarshalNotStruct(t *testing.T) {
 	var scope string
-	err := Marshal(scope)
+	_, err := Marshal(scope)
 	if err == nil {
 		t.Error("exception expected for an object other than structure")
 	}
@@ -38,7 +38,7 @@ func TestMarshalNotStruct(t *testing.T) {
 
 func TestMarshalPointNil(t *testing.T) {
 	var scope *ConfigPlain
-	err := Marshal(scope)
+	_, err := Marshal(scope)
 	if err == nil {
 		t.Error("exception expected for an uninitialized object")
 	}
