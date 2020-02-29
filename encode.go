@@ -47,24 +47,19 @@ func marshalENV(scope interface{}) error {
 		switch kind {
 		case reflect.Int, reflect.Int8, reflect.Int16,
 			reflect.Int32, reflect.Int64:
-			value = fmt.Sprintf("%d", reflect.ValueOf(instance).Int())
+			value = fmt.Sprintf("%d", instance.Int())
 		case reflect.Uint, reflect.Uint8, reflect.Uint16,
 			reflect.Uint32, reflect.Uint64:
-			value = fmt.Sprintf("%d", reflect.ValueOf(instance).Uint())
+			value = fmt.Sprintf("%d", instance.Uint())
 		case reflect.Float32, reflect.Float64:
-			value = fmt.Sprintf("%f", reflect.ValueOf(instance).Float())
+			value = fmt.Sprintf("%f", instance.Float())
 		case reflect.Bool:
-			value = fmt.Sprintf("%t", reflect.ValueOf(instance).Bool())
+			value = fmt.Sprintf("%t", instance.Bool())
 		case reflect.String:
-			value = fmt.Sprintf("%s", reflect.ValueOf(instance).String())
+			value = fmt.Sprintf("%s", instance.String())
 		case reflect.Slice:
-			toStr := func(v interface{}) string {
-				return strings.Trim(
-					strings.Replace(fmt.Sprint(v), " ", sep, -1),
-					"[]",
-				)
-			}
-			value = toStr(instance)
+			str := strings.Replace(fmt.Sprint(instance), " ", sep, -1)
+			value = strings.Trim(str, "[]")
 		default:
 			return fmt.Errorf("incorrect type")
 		} // switch
