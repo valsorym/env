@@ -276,7 +276,7 @@ func Exists(keys ...string) bool {
 // Unmarshal data from the environment into Config struct.
 //
 //    // Important: pointer to initialized structure!
-//    var config *Config = &Config{}
+//    var config = &Config{}
 //
 //    err := env.Unmarshal(config)
 //    if err != nil {
@@ -291,79 +291,84 @@ func Exists(keys ...string) bool {
 //
 //    // UnmarshalENV it's custom method for unmarshalling.
 //    func (c *Config) UnmarshalENV() error {
-//        c.Host = "192.161.0.1"
+//        c.Host = "192.168.0.1"
 //        c.Port = 80
 //        c.AllowedHosts = []string{"192.168.0.1"}
 //
 //        return nil
 //    }
-//
+//    ...
 //    // The result will be the data that sets in the custom
 //    // unmarshalling method.
-//    config.Host         // "192.161.0.1"
+//    config.Host         // "192.168.0.1"
 //    config.Port         // 80
-//    config.AllowedHosts // []string{"192.161.0.1"}
+//    config.AllowedHosts // []string{"192.168.0.1"}
 func Unmarshal(scope interface{}) error {
 	return unmarshalENV(scope)
 }
 
-// Marshal converts the scope in to key/value and put it into environment
-// with update old data.
-//
-// Returns nil or error if there are problems with marshaling.
-//
-//    type Config struct {
-//        Host          string   `env:"HOST"`
-//        Port          int      `env:"PORT"`
-//        AllowedHosts  []string `env:"ALLOWED_HOSTS,:"`
-//    }
-//
-//    // ...
-//    var c = &Config{"0.0.0.0", 8080, []string{"localhost", "127.0.0.1"}}
-//    _, err := env.Marshal(c)
-//    if err != nil {
-//        // problem with marshaling
-//    }
-//
-//    // ...
-//    // Result:
-//    // HOST="0.0.0.0"
-//    // PORT=8080
-//    // ALLOWED_HOSTS="localhost:127.0.0.1"
+// Marshal converts the structure in to key/value and put it into environment
+// with update old values. The first return value returns a map of the data
+// that was correct set into environment. The seconden - error or nil.
 //
 // Supports the following field types: int, int8, int16, int32, int64, uin,
 // uint8, uin16, uint32, uin64, float32, float64, string, bool and slice
-// from thous types.
+// from thous types. For other filed's types will be returned an error.
 //
-// If object has MarshalENV and isn't a nil pointer, Marshal calls its
-// MarshalENV method to scope convertation.
+// If the structure contains a custom MarshalENV method - custom method
+// will be called.
 //
+// Structure fields may have a `env` tag as `env:"KEY[,SEP]"` where:
+//
+//    KEY - matches the name of the key in the environment;
+//    SEP - optional argument, sets the separator for lists (default: space).
+//
+// Structure example:
+//
+//    // Config structure.
 //    type Config struct {
 //        Host         string   `env:"HOST"`
 //        Port         int      `env:"PORT"`
 //        AllowedHosts []string `env:"ALLOWED_HOSTS,:"`
 //    }
 //
+// Marshal data into environment from the Config.
+//
+//    // It can be a structure or a pointer to a structure.
+//    var config = &Config{
+//        "localhost",
+//        8080,
+//        []string{"localhost", "127.0.0.1"},
+//    }
+//
+//    // Returns:
+//    // map[ALLOWED_HOSTS:localhost:127.0.0.1 HOST:localhost PORT:8080], nil
+//    _, err := env.Marshal(config)
+//    if err != nil {
+//        // something went wrong
+//    }
+//
+//    env.Get("HOST")          // "localhost"
+//    env.Get("PORT")          // "8080"
+//    env.Get("ALLOWED_HOSTS") // "localhost:127.0.0.1"
+//
+// If object has MarshalENV and isn't a nil pointer - will be calls it
+// method to scope convertation.
+//
+//    // MarshalENV it's custom method for marshalling.
 //    func (c *Config) MarshalENV() error {
-//        str := strings.Replace(fmt.Sprint(c.AllowedHosts), " ", ":", -1)
-//        os.Setenv("SERVER_ALLOWED_HOSTS", strings.Trim(str, "[]"))
-//        os.Setenv("SERVER_PORT", fmt.Sprintf("%d", c.Port))
-//        os.Setenv("SERVER_HOST", c.Host)
+//        os.Setenv("HOST", "192.168.0.1")
+//        os.Setenv("PORT", "80")
+//        os.Setenv("ALLOWED_HOSTS", "192.168.0.1")
+//
 //        return nil
 //    }
-//
-//    // ...
-//    var c = &Config{"0.0.0.0", 8080, []string{"localhost", "127.0.0.1"}}
-//    _, err := env.Marshal(c)
-//    if err != nil {
-//        // problem with marshaling
-//    }
-//
-//    // ...
-//    // Result:
-//    // SERVER_HOST="0.0.0.0"
-//    // SERVER_PORT=8080
-//    // SERVER_ALLOWED_HOSTS="localhost:127.0.0.1"
+//    ...
+//    // The result will be the data that sets in the custom
+//    // unmarshalling method.
+//    env.Get("HOST")          // "192.168.0.1"
+//    env.Get("PORT")          // "80"
+//    env.Get("ALLOWED_HOSTS") // "192.168.0.1"
 func Marshal(scope interface{}) (map[string]string, error) {
 	return marshalENV(scope)
 }
