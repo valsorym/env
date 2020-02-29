@@ -153,7 +153,50 @@ func Update(filename string) error {
 	return ReadParseStore(filename, expand, update, forced)
 }
 
-// UpdateSafe loads keys with replacing existing ones.
+// UpdateSafe to loads data from env-file into environment with replacing
+// existing values. Ignores the replecing of a ${var} or $var in a string.
+//
+// Returns an error in case of failure.
+//
+// Examples:
+//
+// Suppose that the some value was set into environment as:
+//
+//    goloop$ export KEY_0=VALUE_X
+//
+// And there is .env file with data:
+//
+//    LAST_ID=002
+//    KEY_0=VALUE_000
+//    KEY_1=VALUE_001
+//    KEY_2=VALUE_${LAST_ID}
+//
+// Make code to loads custom values into environment:
+//
+//    // The method prints environment variables starting with 'KEY_'.
+//    print := func() {
+//        for _, item := range env.Environ() {
+//            if strings.HasPrefix(item, "KEY_") {
+//                fmt.Println(item)
+//            }
+//        }
+//    }
+//
+//    // Printed only:
+//    //  KEY_0=VALUE_X
+//    print()
+//
+//    // Load values with replacement.
+//    err := env.Update(".env")
+//    if err != nil {
+//        // something went wrong
+//    }
+//
+//    // Printed all variables:
+//    //  KEY_0=VALUE_000         // data has been updated;
+//    //  KEY_1=VALUE_001         // add new value;
+//    //  KEY_2=VALUE_${LAST_ID}  // add new value without replecing $var.
+//    print()
 func UpdateSafe(filename string) error {
 	var expand, update, forced = false, true, false
 	return ReadParseStore(filename, expand, update, forced)
