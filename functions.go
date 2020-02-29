@@ -203,6 +203,33 @@ func UpdateSafe(filename string) error {
 }
 
 // Exists returns true if all keys sets in the environment.
+// Examples:
+//
+// Suppose that the some value was set into environment as:
+//
+//    goloop$ export KEY_0=VALUE_X
+//
+// And there is .env file with data:
+//
+//    LAST_ID=002
+//    KEY_0=VALUE_000
+//    KEY_1=VALUE_001
+//    KEY_2=VALUE_${LAST_ID}
+//
+// Make code to check existing for a variable in the environment:
+//
+//    fmt.Println(env.Exists("KEY_0"))          // true
+//    fmt.Println(env.Exists("KEY_1"))          // false
+//    fmt.Println(env.Exists("KEY_0", "KEY_1")) // false
+//
+//    // Load values with replacement.
+//    err := env.Update(".env")
+//    if err != nil {
+//        // something went wrong
+//    }
+//
+//    fmt.Println(env.Exists("KEY_1"))          // true
+//    fmt.Println(env.Exists("KEY_0", "KEY_1")) // true
 func Exists(keys ...string) bool {
 	for _, key := range keys {
 		if _, ok := os.LookupEnv(key); !ok {
