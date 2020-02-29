@@ -46,16 +46,17 @@ func marshalENV(scope interface{}) error {
 		kind := field.Type.Kind()
 		switch kind {
 		case reflect.Int, reflect.Int8, reflect.Int16,
-			reflect.Int32, reflect.Int64,
-			reflect.Uint, reflect.Uint8, reflect.Uint16,
+			reflect.Int32, reflect.Int64:
+			value = fmt.Sprintf("%d", reflect.ValueOf(instance).Int())
+		case reflect.Uint, reflect.Uint8, reflect.Uint16,
 			reflect.Uint32, reflect.Uint64:
-			value = fmt.Sprintf("%d", instance)
+			value = fmt.Sprintf("%d", reflect.ValueOf(instance).Uint())
 		case reflect.Float32, reflect.Float64:
-			value = fmt.Sprintf("%f", instance)
+			value = fmt.Sprintf("%f", reflect.ValueOf(instance).Float())
 		case reflect.Bool:
-			value = fmt.Sprintf("%t", instance)
+			value = fmt.Sprintf("%t", reflect.ValueOf(instance).Bool())
 		case reflect.String:
-			value = fmt.Sprintf("%s", instance)
+			value = fmt.Sprintf("%s", reflect.ValueOf(instance).String())
 		case reflect.Slice:
 			toStr := func(v interface{}) string {
 				return strings.Trim(
