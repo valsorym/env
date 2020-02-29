@@ -42,7 +42,19 @@ func Unmarshal(scope interface{}) error {
 	return unmarshalENV(scope)
 }
 
-// Marshal ...
+// Marshal converts the scope in to key/value and put it into environment
+// with update old data.
+//
+// Returns nil or error if there are problems with marshaling.
+//
+//
+//
+// Supports the following field types: int, int8, int16, int32, int64, uin,
+// uint8, uin16, uint32, uin64, float32, float64, string, bool and slice
+// from thous types.
+//
+// If object has MarshalENV and isn't a nil pointer, Marshal calls its
+// MarshalENV method to scope convertation.
 func Marshal(scope interface{}) error {
 	return marshalENV(scope)
 }

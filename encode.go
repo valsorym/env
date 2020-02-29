@@ -66,6 +66,7 @@ func marshalENV(scope interface{}) error {
 
 		// Set into environment.
 		Set(key, value)
+		fmt.Println(key, value)
 	} // for
 
 	return nil
