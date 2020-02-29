@@ -6,58 +6,70 @@ import (
 	"strings"
 )
 
-// parseTag returns tag parameters as [NAME[, SEP]] where
-//     NAME variable name in the environment;
-//     SEP  separator for the list (only for arrays and slices).
-func parseTag(tagValue, defaultName, defaultSep string) (name, sep string) {
-	var data = strings.Split(tagValue, ",")
-
-	switch len(data) {
-	case 0:
-		name, sep = defaultName, defaultSep
-	case 1:
-		name, sep = strings.TrimSpace(data[0]), defaultSep
-	default: // more then 1
-		name, sep = strings.TrimSpace(data[0]), strings.TrimSpace(data[1])
-	}
-
-	if len(name) == 0 { // the name must be at least one character
-		name = defaultName
-	}
-
-	if len(sep) == 0 { // the sep must be at least one character
-		sep = defaultSep
-	}
-
-	return
-}
-
 // unmarshalENV gets variables from the environment and sets them by
 // pointer into scope. Returns an error if something went wrong.
 //
-// Supported types: Int, Int8, Int16, Int32, Int64, Uint, Uint8, Uint16,
-// Uint32, Uint64, Bool, Float32, Float64, String, Array, Slice.
+// Supported types: int, int8, int16, int32, int64, uint, uint8, uint16,
+// uint32, uint64, bool, float32, float64, string, and slice from thous types.
 func unmarshalENV(scope interface{}) error {
-	var rv reflect.Value
+	/*
+		var rv reflect.Value
 
-	// The object must be a pointer.
+		// The object must be a pointer.
+		rv = reflect.ValueOf(scope)
+		if rv.Type().Kind() != reflect.Ptr {
+			t := rv.Type()
+			return fmt.Errorf("cannot use scope (type %s) as type *%s "+
+				"in argument to decode", t, t)
+		}
+
+		// Call custom UnmarshalENV method.
+		if rv.Elem().Kind() != reflect.Struct {
+			return fmt.Errorf("recipient must be initialized struct")
+		} else if cue := rv.MethodByName("UnmarshalENV"); cue.IsValid() {
+			// If the structure has a custom MethodByName method.
+			cue.Call([]reflect.Value{})
+		}
+
+		rv = rv.Elem()
+	*/
+	var (
+		rt reflect.Type  // type
+		rv reflect.Value // value
+		rp reflect.Value // pointer
+	)
+
+	// Define: type, value and pointer.
+	rt = reflect.TypeOf(scope)
 	rv = reflect.ValueOf(scope)
-	if rv.Type().Kind() != reflect.Ptr {
-		t := rv.Type()
+	if rt.Kind() == reflect.Ptr {
+		rp, rt, rv = rv, rt.Elem(), rv.Elem()
+	} else {
 		return fmt.Errorf("cannot use scope (type %s) as type *%s "+
-			"in argument to decode", t, t)
+			"in argument to decode", rt, rt)
 	}
 
-	// Call custom UnmarshalENV method.
-	if rv.Elem().Kind() != reflect.Struct {
-		return fmt.Errorf("recipient must be initialized struct")
-	} else if cue := rv.MethodByName("UnmarshalENV"); cue.IsValid() {
-		// If the structure has a custom MethodByName method.
-		cue.Call([]reflect.Value{})
+	// Scope validation.
+	switch {
+	case rt.Kind() != reflect.Struct:
+		return fmt.Errorf("object must be a structure")
+	case !rv.IsValid():
+		return fmt.Errorf("object must be initialized")
+	}
+
+	// If there is the custom method, MarshlaENV - run it.
+	if m := rp.MethodByName("UnmarshalENV"); m.IsValid() {
+		result := m.Call([]reflect.Value{})
+		if len(result) != 0 {
+			err := result[0].Interface()
+			if err != nil {
+				return fmt.Errorf("marshal: %v", err)
+			}
+		}
+		return nil
 	}
 
 	// Walk through all the fields of the transferred object.
-	rv = rv.Elem()
 	for i := 0; i < rv.NumField(); i++ {
 		field := rv.Type().Field(i)
 		name, sep := parseTag(field.Tag.Get("env"), field.Name, " ")

@@ -6,26 +6,10 @@ import (
 	"strings"
 )
 
-/*
- var ptr reflect.Value
-    var value reflect.Value
-    var finalMethod reflect.Value
-
-    value = reflect.ValueOf(i)
-
-    // if we start with a pointer, we need to get value pointed to
-    // if we start with a value, we need to get a pointer to that value
-    if value.Type().Kind() == reflect.Ptr {
-        ptr = value
-        value = ptr.Elem()
-    } else {
-        ptr = reflect.New(reflect.TypeOf(i))
-        temp := ptr.Elem()
-        temp.Set(value)
-    }
-*/
-
-// marshalENV ...
+// marshalENV saves scope into environment data.
+//
+// Supported types: int, int8, int16, int32, int64, uint, uint8, uint16,
+// uint32, uint64, bool, float32, float64, string, and slice from thous types.
 func marshalENV(scope interface{}) error {
 	var (
 		rt reflect.Type  // type

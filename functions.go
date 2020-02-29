@@ -36,8 +36,17 @@ func Exists(keys ...string) bool {
 	return true
 }
 
-// Unmarshal extracts the contents of the environment and populates
-// the scope data structure.
+// Unmarshal parses the environment data and stores the result in the value
+// pointed to by scope. If scope is nil or not a pointer, Unmarshal returns
+// an error.
+//
+// Supports the following field types: int, int8, int16, int32, int64, uin,
+// uint8, uin16, uint32, uin64, float32, float64, string, bool and slice
+// from thous types.
+//
+// To unmarshal environment into a value implementing the
+// Unmarshaler interface, Unmarshal can to calls the
+// custom UnmarshalENV method.
 func Unmarshal(scope interface{}) error {
 	return unmarshalENV(scope)
 }

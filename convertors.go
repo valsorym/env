@@ -5,7 +5,34 @@ import (
 	"math"
 	"reflect"
 	"strconv"
+	"strings"
 )
+
+// parseTag returns tag parameters as [NAME[, SEP]] where
+//     NAME variable name in the environment;
+//     SEP  separator for the list (only for arrays and slices).
+func parseTag(value, defaultName, defaultSep string) (name, sep string) {
+	var data = strings.Split(value, ",")
+
+	switch len(data) {
+	case 0:
+		name, sep = defaultName, defaultSep
+	case 1:
+		name, sep = strings.TrimSpace(data[0]), defaultSep
+	default: // more then 1
+		name, sep = strings.TrimSpace(data[0]), strings.TrimSpace(data[1])
+	}
+
+	if len(name) == 0 { // the name must be at least one character
+		name = defaultName
+	}
+
+	if len(sep) == 0 { // the sep must be at least one character
+		sep = defaultSep
+	}
+
+	return
+}
 
 // strToIntKind convert string to int64 type with checking for conversion
 // to intX type. Returns default value for int type if value is empty.
