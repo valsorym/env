@@ -218,9 +218,9 @@ func UpdateSafe(filename string) error {
 //
 // Make code to check existing for a variable in the environment:
 //
-//    fmt.Println(env.Exists("KEY_0"))          // true
-//    fmt.Println(env.Exists("KEY_1"))          // false
-//    fmt.Println(env.Exists("KEY_0", "KEY_1")) // false
+//    env.Exists("KEY_0")          // true
+//    env.Exists("KEY_1")          // false
+//    env.Exists("KEY_0", "KEY_1") // false
 //
 //    // Load values with replacement.
 //    err := env.Update(".env")
@@ -228,8 +228,8 @@ func UpdateSafe(filename string) error {
 //        // something went wrong
 //    }
 //
-//    fmt.Println(env.Exists("KEY_1"))          // true
-//    fmt.Println(env.Exists("KEY_0", "KEY_1")) // true
+//    env.Exists("KEY_1")          // true
+//    env.Exists("KEY_0", "KEY_1") // true
 func Exists(keys ...string) bool {
 	for _, key := range keys {
 		if _, ok := os.LookupEnv(key); !ok {
