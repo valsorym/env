@@ -2,6 +2,7 @@ package env
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 )
@@ -49,28 +50,71 @@ type TestDataSlice struct {
 	KeyBool   []bool   `env:"KEY_BOOL,:"`
 }
 
-// TestParseTag tests parseTag function.
-func TestParseTag(t *testing.T) {
-	var tests = [][]string{
-		//       tagValue, defaultName, defaultSep
-		[]string{"", "HOST", " ", "HOST", " "},
-		[]string{"HOST", "host", " ", "HOST", " "},
-		[]string{"PATHS,:", "paths", " ", "PATHS", ":"},
-		[]string{",:", "PORT", " ", "PORT", ":"},
-		[]string{",", "PORT", ":", "PORT", ":"},
-	}
+type ConfigPlain struct {
+	Host         string   `env:"HOST"`
+	Port         int      `env:"PORT"`
+	AllowedHosts []string `env:"ALLOWED_HOSTS,:"`
+}
 
-	for _, test := range tests {
-		name, sep := parseTag(test[0], test[1], test[2])
-		if test[3] != name {
-			t.Errorf("incorrect value for name `%s`!=`%s`", test[3], name)
-		}
+type ConfigExtended struct {
+	Host         string   `env:"HOST"`
+	Port         int      `env:"PORT"`
+	AllowedHosts []string `env:"ALLOWED_HOSTS,:"`
+}
 
-		if test[4] != sep {
-			t.Errorf("incorrect value for sep `%s`!=`%s`", test[4], sep)
-		}
+func (c *ConfigExtended) MarshalENV() error {
+	str := strings.Replace(fmt.Sprint(c.AllowedHosts), " ", ":", -1)
+	os.Setenv("ALLOWED_HOSTS", strings.Trim(str, "[]"))
+	os.Setenv("PORT", fmt.Sprintf("%d", c.Port))
+	os.Setenv("HOST", c.Host)
+	return nil
+}
+
+// TestMarshal ...
+func TestMarshalNotStruct(t *testing.T) {
+	var scope string
+	_, err := Marshal(scope)
+	if err == nil {
+		t.Error("exception expected for an object other than structure")
 	}
 }
+
+func TestMarshalPointNil(t *testing.T) {
+	var scope *ConfigPlain
+	_, err := Marshal(scope)
+	if err == nil {
+		t.Error("exception expected for an uninitialized object")
+	}
+}
+
+/*
+// TestMarshal ...
+func TestMarshalPlain(t *testing.T) {
+	var config = ConfigPlain{}
+	err := Update("./examples/config.env")
+	if err != nil {
+		t.Error(err)
+	}
+
+	Marshal(config)
+	if config.Host != "0.0.0.0" || config.Port != 8080 {
+		t.Errorf("incorrect data parsing: %v", config)
+	}
+}
+
+func TestMarshalPoint(t *testing.T) {
+	var config = &ConfigPlain{}
+	err := Update("./examples/config.env")
+	if err != nil {
+		t.Error(err)
+	}
+
+	Marshal(config)
+	if config.Host != "0.0.0.0" || config.Port != 8080 {
+		t.Error("incorrect data parsing")
+	}
+}
+*/
 
 // TestUnmarshalENVNumber tests unmarshalENV function
 // for Int, Uint and Float types.
