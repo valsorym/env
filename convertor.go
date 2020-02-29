@@ -17,6 +17,7 @@ func marshalENV(scope interface{}) (map[string]string, error) {
 		rp reflect.Value // pointer
 	)
 
+	// Return value.
 	result := make(map[string]string)
 
 	// Define: type, value and pointer.
@@ -196,6 +197,7 @@ func setSlice(instance *reflect.Value,
 	)
 
 	defer func() {
+		// Catch the panic and return an exception as a value.
 		if r := recover(); r != nil {
 			err = fmt.Errorf("%v", r)
 		}
