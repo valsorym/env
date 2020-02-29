@@ -4,7 +4,7 @@ import "os"
 
 // Load to loads data from env-file into environment without replacing
 // existing values. During loading replaces ${var} or $var in the string
-// based on the mapping function.
+// based on the data in the environment.
 //
 // Returns an error in case of failure.
 //
@@ -102,7 +102,52 @@ func LoadSafe(filename string) error {
 	return ReadParseStore(filename, expand, update, forced)
 }
 
-// Update loads keys with replacing existing ones and make expand.
+// Update to loads data from env-file into environment with replacing
+// existing values. During loading replaces ${var} or $var in the string
+// based on the data in the environment.
+//
+// Returns an error in case of failure.
+//
+// Examples:
+//
+// Suppose that the some value was set into environment as:
+//
+//    goloop$ export KEY_0=VALUE_X
+//
+// And there is .env file with data:
+//
+//    LAST_ID=002
+//    KEY_0=VALUE_000
+//    KEY_1=VALUE_001
+//    KEY_2=VALUE_${LAST_ID}
+//
+// Make code to loads custom values into environment:
+//
+//    // The method prints environment variables starting with 'KEY_'.
+//    print := func() {
+//        for _, item := range env.Environ() {
+//            if strings.HasPrefix(item, "KEY_") {
+//                fmt.Println(item)
+//            }
+//        }
+//    }
+//
+//    // Printed only:
+//    //  KEY_0=VALUE_X
+//    print()
+//
+//    // Load values with replacement.
+//    err := env.Update(".env")
+//    if err != nil {
+//        // something went wrong
+//    }
+//
+//    // Printed all variables:
+//    //  KEY_0=VALUE_000  // data has been updated;
+//    //  KEY_1=VALUE_001  // add new value;
+//    //  KEY_2=VALUE_002  // add new value and replaced ${LAST_ID}
+//                         // to the plain text.
+//    print()
 func Update(filename string) error {
 	var expand, update, forced = true, true, false
 	return ReadParseStore(filename, expand, update, forced)
