@@ -12,27 +12,6 @@ import (
 // Supported types: int, int8, int16, int32, int64, uint, uint8, uint16,
 // uint32, uint64, bool, float32, float64, string, and slice from thous types.
 func unmarshalENV(scope interface{}) error {
-	/*
-		var rv reflect.Value
-
-		// The object must be a pointer.
-		rv = reflect.ValueOf(scope)
-		if rv.Type().Kind() != reflect.Ptr {
-			t := rv.Type()
-			return fmt.Errorf("cannot use scope (type %s) as type *%s "+
-				"in argument to decode", t, t)
-		}
-
-		// Call custom UnmarshalENV method.
-		if rv.Elem().Kind() != reflect.Struct {
-			return fmt.Errorf("recipient must be initialized struct")
-		} else if cue := rv.MethodByName("UnmarshalENV"); cue.IsValid() {
-			// If the structure has a custom MethodByName method.
-			cue.Call([]reflect.Value{})
-		}
-
-		rv = rv.Elem()
-	*/
 	var (
 		rt reflect.Type  // type
 		rv reflect.Value // value
