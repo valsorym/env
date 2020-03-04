@@ -6,7 +6,7 @@ import (
 
 // TestReadParseStoreOpen tests function when try to open a nonexistent file.
 func TestLoadReadParseStoreOpen(t *testing.T) {
-	err := ReadParseStore("./examples/nonexist.env", false, false, false)
+	err := ReadParseStore("./fixtures/nonexist.env", false, false, false)
 	if err == nil {
 		t.Error("Reading from a nonexistent file.")
 	}
@@ -24,7 +24,7 @@ func TestReadParseStoreExported(t *testing.T) {
 
 	// Load env-file.
 	Clear()
-	err := ReadParseStore("./examples/exported.env", false, false, false)
+	err := ReadParseStore("./fixtures/exported.env", false, false, false)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -51,7 +51,7 @@ func TestReadParseStoreComments(t *testing.T) {
 
 	// Load env-file.
 	Clear()
-	err := ReadParseStore("./examples/comments.env", false, false, false)
+	err := ReadParseStore("./fixtures/comments.env", false, false, false)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -67,7 +67,7 @@ func TestReadParseStoreComments(t *testing.T) {
 // TestReadParseStoreWorngEqualKey tests problem with
 // spaces before the equal sign.
 func TestReadParseStoreWorngEqualKey(t *testing.T) {
-	err := ReadParseStore("./examples/wrongequalkey.env", false, false, false)
+	err := ReadParseStore("./fixtures/wrongequalkey.env", false, false, false)
 	if err != KeyError {
 		t.Error("Must be incorrectKeyError")
 	}
@@ -77,7 +77,7 @@ func TestReadParseStoreWorngEqualKey(t *testing.T) {
 // TestReadParseStoreWorngEqualValue tests problem with
 // space after the equal sign.
 func TestReadParseStoreWorngEqualValue(t *testing.T) {
-	err := ReadParseStore("./examples/wrongequalvalue.env", false, true, false)
+	err := ReadParseStore("./fixtures/wrongequalvalue.env", false, true, false)
 	if err != ValueError {
 		t.Error("Must be incorrectValueError")
 	}
@@ -98,7 +98,7 @@ func TestReadParseStoreIgnoreWorngEntry(t *testing.T) {
 
 	// Load env-file.
 	Clear()
-	err := ReadParseStore("./examples/wrongentries.env", false, false, forced)
+	err := ReadParseStore("./fixtures/wrongentries.env", false, false, forced)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -124,7 +124,7 @@ func TestReadParseStoreVariables(t *testing.T) {
 
 	// Load env-file.
 	Clear()
-	err := ReadParseStore("./examples/variables.env", expand, false, false)
+	err := ReadParseStore("./fixtures/variables.env", expand, false, false)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -146,7 +146,7 @@ func TestReadParseStoreNotUpdate(t *testing.T) {
 	Set("KEY_0", "") // set empty string
 
 	// Read simple env-file with KEY_0.
-	err := ReadParseStore("./examples/simple.env", false, update, false)
+	err := ReadParseStore("./fixtures/simple.env", false, update, false)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -166,7 +166,7 @@ func TestReadParseStoreUpdate(t *testing.T) {
 	Set("KEY_0", "") // set empty string
 
 	// Read simple env-file with KEY_0.
-	err := ReadParseStore("./examples/simple.env", false, update, false)
+	err := ReadParseStore("./fixtures/simple.env", false, update, false)
 	if err != nil {
 		t.Error(err.Error())
 	}

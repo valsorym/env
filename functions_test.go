@@ -10,7 +10,7 @@ func TestLoad(t *testing.T) {
 	Set("KEY_0", "default")
 
 	// Load env-file.
-	err := Load("./examples/variables.env")
+	err := Load("./fixtures/variables.env")
 	if err != nil {
 		t.Error("Unable to open file.")
 	}
@@ -37,7 +37,7 @@ func TestLoadSafe(t *testing.T) {
 	Set("KEY_0", "default")
 
 	// Load env-file.
-	err := LoadSafe("./examples/variables.env")
+	err := LoadSafe("./fixtures/variables.env")
 	if err != nil {
 		t.Error("Unable to open file.")
 	}
@@ -54,7 +54,7 @@ func TestUpdate(t *testing.T) {
 	Set("KEY_0", "default")
 
 	// Load env-file.
-	err := Update("./examples/variables.env")
+	err := Update("./fixtures/variables.env")
 	if err != nil {
 		t.Error("Unable to open file.")
 	}
@@ -81,7 +81,7 @@ func TestUpdateSafe(t *testing.T) {
 	Set("KEY_0", "default")
 
 	// Load env-file.
-	err := UpdateSafe("./examples/variables.env")
+	err := UpdateSafe("./fixtures/variables.env")
 	if err != nil {
 		t.Error("Unable to open file.")
 	}
