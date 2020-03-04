@@ -6,15 +6,15 @@ import (
 	"strings"
 )
 
-// Marshaler describes an interface for implementing
+// Marshaller describes an interface for implementing
 // a custom method for marshaling.
-type Marshaler interface {
+type Marshaller interface {
 	MarshalENV() ([]string, error)
 }
 
-// Unmarshaler describes an interface for implementing
+// Unmarshaller describes an interface for implementing
 // a custom method for unmarshaling.
-type Unmarshaler interface {
+type Unmarshaller interface {
 	UnmarshalENV() error
 }
 
@@ -51,7 +51,7 @@ func marshalENV(scope interface{}) ([]string, error) {
 	}
 
 	// Implements Marshaler interface.
-	if rp.Type().Implements(reflect.TypeOf((*Marshaler)(nil)).Elem()) {
+	if rp.Type().Implements(reflect.TypeOf((*Marshaller)(nil)).Elem()) {
 		// Try to run custom MarshalENV function.
 		if m := rp.MethodByName("MarshalENV"); m.IsValid() {
 			tmp := m.Call([]reflect.Value{})
@@ -134,7 +134,7 @@ func unmarshalENV(scope interface{}) error {
 	}
 
 	// Implements Unmarshaler interface.
-	if rp.Type().Implements(reflect.TypeOf((*Unmarshaler)(nil)).Elem()) {
+	if rp.Type().Implements(reflect.TypeOf((*Unmarshaller)(nil)).Elem()) {
 		// If there is the custom method, MarshlaENV - run it.
 		if m := rp.MethodByName("UnmarshalENV"); m.IsValid() {
 			tmp := m.Call([]reflect.Value{})

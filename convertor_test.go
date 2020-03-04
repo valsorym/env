@@ -2,12 +2,12 @@ package env
 
 import (
 	"fmt"
-	"os"
 	"strings"
 	"testing"
 )
 
-type TestDataNumber struct {
+// NumberTestType structure for testing conversion of numeric types.
+type NumberTestType struct {
 	KeyInt     int     `env:"KEY_INT"`
 	KeyInt8    int8    `env:"KEY_INT8"`
 	KeyInt16   int16   `env:"KEY_INT16"`
@@ -22,15 +22,19 @@ type TestDataNumber struct {
 	KeyFloat64 float64 `env:"KEY_FLOAT64"`
 }
 
-type TestDataBool struct {
+// BoolTestType structure for testing conversion of boolean types.
+type BoolTestType struct {
 	KeyBool bool `env:"KEY_BOOL"`
 }
 
-type TestDataString struct {
+// StringTestType structure for testing conversion of string types.
+type StringTestType struct {
 	KeyString string `env:"KEY_STRING"`
 }
 
-type TestDataSlice struct {
+// SliceTestType structure for testing conversion of
+// different type slices types.
+type SliceTestType struct {
 	KeyInt   []int   `env:"KEY_INT,:"`
 	KeyInt8  []int8  `env:"KEY_INT8,:"`
 	KeyInt16 []int16 `env:"KEY_INT16,:"`
@@ -50,27 +54,30 @@ type TestDataSlice struct {
 	KeyBool   []bool   `env:"KEY_BOOL,:"`
 }
 
-type ConfigPlain struct {
+// PlainTestType simple complex type.
+type PlainTestType struct {
 	Host         string   `env:"HOST"`
 	Port         int      `env:"PORT"`
 	AllowedHosts []string `env:"ALLOWED_HOSTS,:"`
 }
 
-type ConfigExtended struct {
+// Extended simple complex type that implements
+// Marshaller and Unmarshaller interfaces.
+type ExtendedTestType struct {
 	Host         string   `env:"HOST"`
 	Port         int      `env:"PORT"`
 	AllowedHosts []string `env:"ALLOWED_HOSTS,:"`
 }
 
-func (c *ConfigExtended) MarshalENV() error {
+func (c *ExtendedTestType) MarshalENV() ([]string, error) {
 	str := strings.Replace(fmt.Sprint(c.AllowedHosts), " ", ":", -1)
-	os.Setenv("ALLOWED_HOSTS", strings.Trim(str, "[]"))
-	os.Setenv("PORT", fmt.Sprintf("%d", c.Port))
-	os.Setenv("HOST", c.Host)
-	return nil
+	Set("ALLOWED_HOSTS", strings.Trim(str, "[]"))
+	Set("PORT", fmt.Sprintf("%d", c.Port))
+	Set("HOST", c.Host)
+	return []string{}, nil
 }
 
-// TestMarshal ...
+// TestMarshalNotStruct tests unmarshalENV function for not struct values.
 func TestMarshalNotStruct(t *testing.T) {
 	var scope string
 	_, err := Marshal(scope)
@@ -79,42 +86,14 @@ func TestMarshalNotStruct(t *testing.T) {
 	}
 }
 
+// TestMarshalPointNil tests unmarshalENV function for uninitialized pointer.
 func TestMarshalPointNil(t *testing.T) {
-	var scope *ConfigPlain
+	var scope *PlainTestType
 	_, err := Marshal(scope)
 	if err == nil {
 		t.Error("exception expected for an uninitialized object")
 	}
 }
-
-/*
-// TestMarshal ...
-func TestMarshalPlain(t *testing.T) {
-	var config = ConfigPlain{}
-	err := Update("./examples/config.env")
-	if err != nil {
-		t.Error(err)
-	}
-
-	Marshal(config)
-	if config.Host != "0.0.0.0" || config.Port != 8080 {
-		t.Errorf("incorrect data parsing: %v", config)
-	}
-}
-
-func TestMarshalPoint(t *testing.T) {
-	var config = &ConfigPlain{}
-	err := Update("./examples/config.env")
-	if err != nil {
-		t.Error(err)
-	}
-
-	Marshal(config)
-	if config.Host != "0.0.0.0" || config.Port != 8080 {
-		t.Error("incorrect data parsing")
-	}
-}
-*/
 
 // TestUnmarshalENVNumber tests unmarshalENV function
 // for Int, Uint and Float types.
@@ -138,7 +117,7 @@ func TestUnmarshalENVNumber(t *testing.T) {
 	// Correct value.
 	for i := 0; i < 3; i++ {
 		for key, data := range tests {
-			var d = &TestDataNumber{}
+			var d = &NumberTestType{}
 
 			Clear()
 			Set(key, data[i])
@@ -235,7 +214,7 @@ func TestUnmarshalENVBool(t *testing.T) {
 
 	// Test correct values.
 	for value, test := range tests {
-		var d = &TestDataBool{}
+		var d = &BoolTestType{}
 
 		Clear()
 		Set("KEY_BOOL", value)
@@ -252,7 +231,7 @@ func TestUnmarshalENVBool(t *testing.T) {
 
 	// Incorrect value.
 	for _, value := range []string{"string", "0.d", "true/false"} {
-		var d = &TestDataBool{}
+		var d = &BoolTestType{}
 
 		Clear()
 		Set("KEY_BOOL", value)
@@ -276,7 +255,7 @@ func TestUnmarshalENVString(t *testing.T) {
 
 	// Test correct values.
 	for _, test := range tests {
-		var d = &TestDataString{}
+		var d = &StringTestType{}
 		var s = fmt.Sprintf("%v", test)
 
 		Clear()
@@ -323,7 +302,7 @@ func TestUnmarshalENVSliceCorrect(t *testing.T) {
 
 	// Testing.
 	for key, value := range tests {
-		var d = &TestDataSlice{}
+		var d = &SliceTestType{}
 
 		Clear()
 		Set(key, value)
@@ -417,7 +396,7 @@ func TestUnmarshalENVSliceIncorrect(t *testing.T) {
 
 	// Testing.
 	for key, value := range tests {
-		var d = &TestDataSlice{}
+		var d = &SliceTestType{}
 
 		Clear()
 		Set(key, value)

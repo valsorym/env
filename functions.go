@@ -247,7 +247,7 @@ func Exists(keys ...string) bool {
 // uint8, uin16, uint32, uin64, float32, float64, string, bool and slice
 // from thous types. For other filed's types will be returned an error.
 //
-// If the structure implements Unmarshaler interface - the custom UnmarshalENV
+// If the structure implements Unmarshaller interface - the custom UnmarshalENV
 // method will be called.
 //
 // Structure fields may have a `env` tag as `env:"KEY[,SEP]"` where:
@@ -315,7 +315,7 @@ func Unmarshal(scope interface{}) error {
 // uint8, uin16, uint32, uin64, float32, float64, string, bool and slice
 // from thous types. For other filed's types will be returned an error.
 //
-// If the structure implements Marshaler interface - the custom MarshalENV
+// If the structure implements Marshaller interface - the custom MarshalENV
 // method - will be called.
 //
 // Structure fields may have a `env` tag as `env:"KEY[,SEP]"` where:
