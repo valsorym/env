@@ -69,30 +69,26 @@ type ExtendedTestType struct {
 	AllowedHosts []string `env:"ALLOWED_HOSTS,:"`
 }
 
+// MarshalENV the custom method for marshalling.
 func (c *ExtendedTestType) MarshalENV() ([]string, error) {
-	str := strings.Replace(fmt.Sprint(c.AllowedHosts), " ", ":", -1)
-	Set("ALLOWED_HOSTS", strings.Trim(str, "[]"))
-	Set("PORT", fmt.Sprintf("%d", c.Port))
-	Set("HOST", c.Host)
-	return []string{}, nil
+	// Test data set manually.
+	Set("HOST", "192.168.0.1")
+	Set("PORT", "80")
+	Set("ALLOWED_HOSTS", "192.168.0.1")
+	return []string{
+		"HOST=192.168.0.1",
+		"PORT=80",
+		"ALLOWED_HOSTS=192.168.0.1",
+	}, nil
 }
 
-// TestMarshalNotStruct tests unmarshalENV function for not struct values.
-func TestMarshalNotStruct(t *testing.T) {
-	var scope string
-	_, err := Marshal(scope)
-	if err == nil {
-		t.Error("exception expected for an object other than structure")
-	}
-}
-
-// TestMarshalPointNil tests unmarshalENV function for uninitialized pointer.
-func TestMarshalPointNil(t *testing.T) {
-	var scope *PlainTestType
-	_, err := Marshal(scope)
-	if err == nil {
-		t.Error("exception expected for an uninitialized object")
-	}
+// UnmarshalENV the custom method for unmarshalling.
+func (c *ExtendedTestType) UnmarshalENV() error {
+	// Test data set manually.
+	c.Host = "192.168.0.1"
+	c.Port = 80
+	c.AllowedHosts = []string{"192.168.0.1"}
+	return nil
 }
 
 // TestUnmarshalENVNumber tests unmarshalENV function
@@ -309,7 +305,7 @@ func TestUnmarshalENVSliceCorrect(t *testing.T) {
 
 		err := unmarshalENV(d)
 		if err != nil {
-			t.Error("xxxxxxxxxxxxxxxxxxxx:", err)
+			t.Error(err)
 		}
 
 		switch key {
@@ -405,5 +401,229 @@ func TestUnmarshalENVSliceIncorrect(t *testing.T) {
 		if err == nil {
 			t.Error("must be error")
 		}
+	}
+}
+
+// TestMarshalENVNotStruct tests marshalENV function for not struct values.
+func TestMarshalNotStruct(t *testing.T) {
+	var scope string
+	_, err := marshalENV(scope)
+	if err == nil {
+		t.Error("exception expected for an object other than structure")
+	}
+}
+
+// TestMarshalENVPointerNil tests marshalENV function
+// for uninitialized pointer.
+func TestMarshalENVPointerNil(t *testing.T) {
+	var scope *PlainTestType
+	_, err := marshalENV(scope)
+	if err == nil {
+		t.Error("exception expected for an uninitialized object")
+	}
+}
+
+// TestMarshalENVObj tests marshalENV function with struct value.
+func TestMarshalENVObj(t *testing.T) {
+	var scope = PlainTestType{
+		"localhost",
+		8080,
+		[]string{"localhost", "127.0.0.1"},
+	}
+
+	Clear()
+	_, err := marshalENV(scope)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Test marshalling.
+	if v := Get("HOST"); v != "localhost" {
+		t.Errorf("Incorrect value set for HOST: %s", v)
+	}
+
+	if v := Get("PORT"); v != "8080" {
+		t.Errorf("Incorrect value set for PORT: %s", v)
+	}
+
+	if v := Get("ALLOWED_HOSTS"); v != "localhost:127.0.0.1" {
+		t.Errorf("Incorrect value set for PORT: %s", v)
+	}
+}
+
+// TestMarshalENVPointer tests marshalENV function
+// with pointer of the struct.
+func TestMarshalENVPointer(t *testing.T) {
+	var scope = &PlainTestType{
+		"localhost",
+		8080,
+		[]string{"localhost", "127.0.0.1"},
+	}
+
+	Clear()
+	_, err := marshalENV(scope)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Test marshalling.
+	if v := Get("HOST"); v != "localhost" {
+		t.Errorf("Incorrect value set for HOST: %s", v)
+	}
+
+	if v := Get("PORT"); v != "8080" {
+		t.Errorf("Incorrect value set for PORT: %s", v)
+	}
+
+	if v := Get("ALLOWED_HOSTS"); v != "localhost:127.0.0.1" {
+		t.Errorf("Incorrect value set for PORT: %s", v)
+	}
+}
+
+// TestMarshalENVObjCustom tests marshalENV function for object
+// with custom MarshalENV method.
+func TestMarshalENVObjCustom(t *testing.T) {
+	var scope = ExtendedTestType{
+		"localhost",                        // default: 192.168.0.1
+		8080,                               // default: 80
+		[]string{"localhost", "127.0.0.1"}, // default: 192.168.0.1
+	}
+
+	Clear()
+	_, err := marshalENV(scope)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Test marshalling.
+	if v := Get("HOST"); v != "192.168.0.1" {
+		t.Errorf("Incorrect value set for HOST: %s", v)
+	}
+
+	if v := Get("PORT"); v != "80" {
+		t.Errorf("Incorrect value set for PORT: %s", v)
+	}
+
+	if v := Get("ALLOWED_HOSTS"); v != "192.168.0.1" {
+		t.Errorf("Incorrect value set for PORT: %s", v)
+	}
+}
+
+// TestMarshalENVPointerCustom tests marshalENV function for pointer
+// with custom MarshalENV method.
+func TestMarshalENVPointerCustom(t *testing.T) {
+	var scope = &ExtendedTestType{
+		"localhost",                        // default: 192.168.0.1
+		8080,                               // default: 80
+		[]string{"localhost", "127.0.0.1"}, // default: 192.168.0.1
+	}
+
+	Clear()
+	_, err := marshalENV(scope)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Test marshalling.
+	if v := Get("HOST"); v != "192.168.0.1" {
+		t.Errorf("Incorrect value set for HOST: %s", v)
+	}
+
+	if v := Get("PORT"); v != "80" {
+		t.Errorf("Incorrect value set for PORT: %s", v)
+	}
+
+	if v := Get("ALLOWED_HOSTS"); v != "192.168.0.1" {
+		t.Errorf("Incorrect value set for PORT: %s", v)
+	}
+}
+
+// TestUnmarshalENVNotStruct tests unmarshalENV function for not struct values.
+func TestUnmarshalNotStruct(t *testing.T) {
+	var scope string
+	err := unmarshalENV(scope)
+	if err == nil {
+		t.Error("exception expected for an object other than structure")
+	}
+}
+
+// TestUnmarshalENVNotPointer tests unmarshalENV function
+// for not pointer value.
+func TestUnmarshalNotPointer(t *testing.T) {
+	var scope PlainTestType
+	err := unmarshalENV(scope)
+	if err == nil {
+		t.Error("exception expected for not pointer")
+	}
+}
+
+// TestUnmarshalENVPointerNil tests unmarshalENV function
+// for uninitialized pointer.
+func TestUnmarshalPointerNil(t *testing.T) {
+	var scope *PlainTestType
+	err := unmarshalENV(scope)
+	if err == nil {
+		t.Error("exception expected for an uninitialized object")
+	}
+}
+
+// TestUnmarshalENV tests unmarshalENV function.
+func TestUnmarshalENV(t *testing.T) {
+	var scope = &PlainTestType{}
+
+	// Set test data.
+	Clear()
+	Set("HOST", "localhost")
+	Set("PORT", "8080")
+	Set("ALLOWED_HOSTS", "localhost:127.0.0.1")
+
+	err := unmarshalENV(scope)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Test marshalling.
+	if scope.Host != "localhost" {
+		t.Errorf("Incorrect value set for HOST: %s", scope.Host)
+	}
+
+	if scope.Port != 8080 {
+		t.Errorf("Incorrect value set for PORT: %d", scope.Port)
+	}
+
+	str := strings.Replace(fmt.Sprint(scope.AllowedHosts), " ", ":", -1)
+	if strings.Trim(str, "[]") != "localhost:127.0.0.1" {
+		t.Errorf("Incorrect value set for PORT: %v", scope.AllowedHosts)
+	}
+}
+
+// TestUnmarshalENVCustom tests unmarshalENV function
+// with custom UnmarshalENV method.
+func TestUnmarshalENVCustom(t *testing.T) {
+	var scope = &ExtendedTestType{}
+
+	// Set test data.
+	Clear()
+	Set("HOST", "localhost")                    // default: 192.168.0.1
+	Set("PORT", "8080")                         // default: 80
+	Set("ALLOWED_HOSTS", "localhost:127.0.0.1") // default: 192.168.0.1
+
+	err := unmarshalENV(scope)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Test marshalling.
+	if scope.Host != "192.168.0.1" {
+		t.Errorf("Incorrect value set for HOST: %s", scope.Host)
+	}
+
+	if scope.Port != 80 {
+		t.Errorf("Incorrect value set for PORT: %d", scope.Port)
+	}
+
+	str := strings.Replace(fmt.Sprint(scope.AllowedHosts), " ", ":", -1)
+	if strings.Trim(str, "[]") != "192.168.0.1" {
+		t.Errorf("Incorrect value set for PORT: %v", scope.AllowedHosts)
 	}
 }

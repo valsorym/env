@@ -62,13 +62,12 @@ func marshalENV(scope interface{}) ([]string, error) {
 		// Try to run custom MarshalENV function.
 		if m := rp.MethodByName("MarshalENV"); m.IsValid() {
 			tmp := m.Call([]reflect.Value{})
-			if len(tmp) != 0 {
-				err := tmp[0].Interface()
-				if err != nil {
-					return result, fmt.Errorf("marshal: %v", err)
-				}
+			value := tmp[0].Interface()
+			err := tmp[1].Interface()
+			if err != nil {
+				return []string{}, fmt.Errorf("marshal: %v", err)
 			}
-			return result, nil
+			return value.([]string), nil
 		}
 	}
 
@@ -145,11 +144,9 @@ func unmarshalENV(scope interface{}) error {
 		// If there is the custom method, MarshlaENV - run it.
 		if m := rp.MethodByName("UnmarshalENV"); m.IsValid() {
 			tmp := m.Call([]reflect.Value{})
-			if len(tmp) != 0 {
-				err := tmp[0].Interface()
-				if err != nil {
-					return fmt.Errorf("unmarshal: %v", err)
-				}
+			err := tmp[0].Interface()
+			if err != nil {
+				return fmt.Errorf("unmarshal: %v", err)
 			}
 			return nil
 		}
