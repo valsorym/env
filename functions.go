@@ -247,8 +247,8 @@ func Exists(keys ...string) bool {
 // uint8, uin16, uint32, uin64, float32, float64, string, bool and slice
 // from thous types. For other filed's types will be returned an error.
 //
-// If the structure contains a custom UnmarshalENV method - custom method
-// will be called.
+// If the structure implements Unmarshaler interface - the custom UnmarshalENV
+// method will be called.
 //
 // Structure fields may have a `env` tag as `env:"KEY[,SEP]"` where:
 //
@@ -315,8 +315,8 @@ func Unmarshal(scope interface{}) error {
 // uint8, uin16, uint32, uin64, float32, float64, string, bool and slice
 // from thous types. For other filed's types will be returned an error.
 //
-// If the structure contains a custom MarshalENV method - custom method
-// will be called.
+// If the structure implements Marshaler interface - the custom MarshalENV
+// method - will be called.
 //
 // Structure fields may have a `env` tag as `env:"KEY[,SEP]"` where:
 //
@@ -356,12 +356,12 @@ func Unmarshal(scope interface{}) error {
 // method to scope convertation.
 //
 //    // MarshalENV it's custom method for marshalling.
-//    func (c *Config) MarshalENV() error {
+//    func (c *Config) MarshalENV() ([]string, error ){
 //        os.Setenv("HOST", "192.168.0.1")
 //        os.Setenv("PORT", "80")
 //        os.Setenv("ALLOWED_HOSTS", "192.168.0.1")
 //
-//        return nil
+//        return []string{}, nil
 //    }
 //    ...
 //    // The result will be the data that sets in the custom
@@ -369,6 +369,6 @@ func Unmarshal(scope interface{}) error {
 //    env.Get("HOST")          // "192.168.0.1"
 //    env.Get("PORT")          // "80"
 //    env.Get("ALLOWED_HOSTS") // "192.168.0.1"
-func Marshal(scope interface{}) (map[string]string, error) {
+func Marshal(scope interface{}) ([]string, error) {
 	return marshalENV(scope)
 }

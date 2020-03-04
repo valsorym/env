@@ -6,19 +6,30 @@ import (
 	"strings"
 )
 
+// Marshaler describes an interface for implementing
+// a custom method for marshaling.
+type Marshaler interface {
+	MarshalENV() ([]string, error)
+}
+
+// Unmarshaler describes an interface for implementing
+// a custom method for unmarshaling.
+type Unmarshaler interface {
+	UnmarshalENV() error
+}
+
 // marshalENV saves scope into environment data.
 //
 // Supported types: int, int8, int16, int32, int64, uint, uint8, uint16,
 // uint32, uint64, bool, float32, float64, string, and slice from thous types.
-func marshalENV(scope interface{}) (map[string]string, error) {
+func marshalENV(scope interface{}) ([]string, error) {
 	var (
 		rt reflect.Type  // type
 		rv reflect.Value // value
 		rp reflect.Value // pointer
-	)
 
-	// Return value.
-	result := make(map[string]string)
+		result []string
+	)
 
 	// Define: type, value and pointer.
 	rt = reflect.TypeOf(scope)
@@ -39,19 +50,23 @@ func marshalENV(scope interface{}) (map[string]string, error) {
 		return result, fmt.Errorf("object must be initialized")
 	}
 
-	// If there is the custom method, MarshlaENV - run it.
-	if m := rp.MethodByName("MarshalENV"); m.IsValid() {
-		tmp := m.Call([]reflect.Value{})
-		if len(tmp) != 0 {
-			err := tmp[0].Interface()
-			if err != nil {
-				return result, fmt.Errorf("marshal: %v", err)
+	// Implements Marshaler interface.
+	if rp.Type().Implements(reflect.TypeOf((*Marshaler)(nil)).Elem()) {
+		// Try to run custom MarshalENV function.
+		if m := rp.MethodByName("MarshalENV"); m.IsValid() {
+			tmp := m.Call([]reflect.Value{})
+			if len(tmp) != 0 {
+				err := tmp[0].Interface()
+				if err != nil {
+					return result, fmt.Errorf("marshal: %v", err)
+				}
 			}
+			return result, nil
 		}
-		return result, nil
 	}
 
 	// Walk through the fields.
+	result = make([]string, 0, rv.NumField()-1)
 	for i := 0; i < rv.NumField(); i++ {
 		var key, value, sep string
 		field := rv.Type().Field(i)
@@ -80,9 +95,9 @@ func marshalENV(scope interface{}) (map[string]string, error) {
 			return result, fmt.Errorf("incorrect type")
 		} // switch
 
-		// Set into environment.
+		// Set into environment and add to result list.
 		Set(key, value)
-		result[key] = value
+		result = append(result, fmt.Sprintf("%s=%s", key, value))
 	} // for
 
 	return result, nil
@@ -118,16 +133,19 @@ func unmarshalENV(scope interface{}) error {
 		return fmt.Errorf("object must be initialized")
 	}
 
-	// If there is the custom method, MarshlaENV - run it.
-	if m := rp.MethodByName("UnmarshalENV"); m.IsValid() {
-		tmp := m.Call([]reflect.Value{})
-		if len(tmp) != 0 {
-			err := tmp[0].Interface()
-			if err != nil {
-				return fmt.Errorf("marshal: %v", err)
+	// Implements Unmarshaler interface.
+	if rp.Type().Implements(reflect.TypeOf((*Unmarshaler)(nil)).Elem()) {
+		// If there is the custom method, MarshlaENV - run it.
+		if m := rp.MethodByName("UnmarshalENV"); m.IsValid() {
+			tmp := m.Call([]reflect.Value{})
+			if len(tmp) != 0 {
+				err := tmp[0].Interface()
+				if err != nil {
+					return fmt.Errorf("marshal: %v", err)
+				}
 			}
+			return nil
 		}
-		return nil
 	}
 
 	// Walk through all the fields of the transferred object.
