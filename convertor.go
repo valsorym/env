@@ -6,6 +6,13 @@ import (
 	"strings"
 )
 
+// Error's values.
+var (
+	NotInitializedError = fmt.Errorf("object must be initialized")
+	NotStructureError   = fmt.Errorf("object must be a structure")
+	TypeError           = fmt.Errorf("incorrect type")
+)
+
 // Marshaller describes an interface for implementing
 // a custom method for marshaling.
 type Marshaller interface {
@@ -45,9 +52,9 @@ func marshalENV(scope interface{}) ([]string, error) {
 	// Scope validation.
 	switch {
 	case rt.Kind() != reflect.Struct:
-		return result, fmt.Errorf("object must be a structure")
+		return result, NotStructureError
 	case !rv.IsValid():
-		return result, fmt.Errorf("object must be initialized")
+		return result, NotInitializedError
 	}
 
 	// Implements Marshaler interface.
@@ -92,7 +99,7 @@ func marshalENV(scope interface{}) ([]string, error) {
 			str := strings.Replace(fmt.Sprint(instance), " ", sep, -1)
 			value = strings.Trim(str, "[]")
 		default:
-			return result, fmt.Errorf("incorrect type")
+			return result, TypeError
 		} // switch
 
 		// Set into environment and add to result list.
@@ -128,9 +135,9 @@ func unmarshalENV(scope interface{}) error {
 	// Scope validation.
 	switch {
 	case rt.Kind() != reflect.Struct:
-		return fmt.Errorf("object must be a structure")
+		return NotStructureError
 	case !rv.IsValid():
-		return fmt.Errorf("object must be initialized")
+		return NotInitializedError
 	}
 
 	// Implements Unmarshaler interface.
@@ -141,7 +148,7 @@ func unmarshalENV(scope interface{}) error {
 			if len(tmp) != 0 {
 				err := tmp[0].Interface()
 				if err != nil {
-					return fmt.Errorf("marshal: %v", err)
+					return fmt.Errorf("unmarshal: %v", err)
 				}
 			}
 			return nil
@@ -196,7 +203,7 @@ func unmarshalENV(scope interface{}) error {
 				return err
 			}
 		default:
-			return fmt.Errorf("incorrect type")
+			return TypeError
 		} // switch
 	} // for
 
@@ -264,7 +271,7 @@ func setSlice(instance *reflect.Value,
 	case reflect.String:
 		stringSeq = seq
 	default:
-		return fmt.Errorf("incorrect type %v\n", kind)
+		return TypeError
 	}
 
 	// Set correct value.

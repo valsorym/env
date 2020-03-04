@@ -68,7 +68,7 @@ func TestReadParseStoreComments(t *testing.T) {
 // spaces before the equal sign.
 func TestReadParseStoreWorngEqualKey(t *testing.T) {
 	err := ReadParseStore("./examples/wrongequalkey.env", false, false, false)
-	if err != incorrectKeyError {
+	if err != KeyError {
 		t.Error("Must be incorrectKeyError")
 	}
 
@@ -78,7 +78,7 @@ func TestReadParseStoreWorngEqualKey(t *testing.T) {
 // space after the equal sign.
 func TestReadParseStoreWorngEqualValue(t *testing.T) {
 	err := ReadParseStore("./examples/wrongequalvalue.env", false, true, false)
-	if err != incorrectValueError {
+	if err != ValueError {
 		t.Error("Must be incorrectValueError")
 	}
 }

@@ -8,16 +8,16 @@ import (
 	"testing"
 )
 
-// ...
-type TestIntUintFloat struct {
+// UIFDataTestType the uint, int and float test type.
+type UIFDataTestType struct {
 	Value   string
 	Control string
 	Correct bool
 	Kind    reflect.Kind
 }
 
-// ...
-type TestBool struct {
+// BoolDataTestType the boolean test type.
+type BoolDataTestType struct {
 	Value   string
 	Control bool
 	Correct bool
@@ -93,8 +93,8 @@ func TestParseExpressionIncorrectKey(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		if _, _, err := parseExpression(test); err != incorrectKeyError {
-			t.Errorf("For `%s` value must be incorrectKeyError.", test)
+		if _, _, err := parseExpression(test); err != KeyError {
+			t.Errorf("For `%s` value must be KeyError.", test)
 		}
 	}
 }
@@ -112,8 +112,8 @@ func TestParseExpressionIncorrectValue(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		if _, _, err := parseExpression(test); err != incorrectValueError {
-			t.Errorf("For `%s` value must be incorrectValueError.", test)
+		if _, _, err := parseExpression(test); err != ValueError {
+			t.Errorf("For `%s` value must be ValueError.", test)
 		}
 	}
 }
@@ -136,21 +136,21 @@ func TestParseExpression(t *testing.T) {
 
 // TestStrToBool tests strToBool function.
 func TestStrToBool(t *testing.T) {
-	var tests = []TestBool{
-		TestBool{"", false, true},
-		TestBool{"0", false, true},
-		TestBool{"1", true, true},
-		TestBool{"1.1", true, true},
-		TestBool{"-1.1", true, true},
-		TestBool{"0.0", false, true},
-		TestBool{"true", true, true},
-		TestBool{"True", true, true},
-		TestBool{"TRUE", true, true},
-		TestBool{"false", false, true},
-		TestBool{"False", false, true},
-		TestBool{"FALSE", false, true},
-		TestBool{"string", false, false},
-		TestBool{"a:b:c", false, false},
+	var tests = []BoolDataTestType{
+		BoolDataTestType{"", false, true},
+		BoolDataTestType{"0", false, true},
+		BoolDataTestType{"1", true, true},
+		BoolDataTestType{"1.1", true, true},
+		BoolDataTestType{"-1.1", true, true},
+		BoolDataTestType{"0.0", false, true},
+		BoolDataTestType{"true", true, true},
+		BoolDataTestType{"True", true, true},
+		BoolDataTestType{"TRUE", true, true},
+		BoolDataTestType{"false", false, true},
+		BoolDataTestType{"False", false, true},
+		BoolDataTestType{"FALSE", false, true},
+		BoolDataTestType{"string", false, false},
+		BoolDataTestType{"a:b:c", false, false},
 	}
 
 	// Test correct values.
@@ -171,7 +171,7 @@ func TestStrToBool(t *testing.T) {
 // TestStrToIntKind tests strToIntKind function.
 func TestStrToIntKind(t *testing.T) {
 	var (
-		tests    []TestIntUintFloat
+		tests    []UIFDataTestType
 		maxInt   string = fmt.Sprintf("%d", math.MaxInt64-1)
 		maxInt8  string = fmt.Sprintf("%d", math.MaxInt8-1)
 		maxInt16 string = fmt.Sprintf("%d", math.MaxInt16-1)
@@ -185,30 +185,30 @@ func TestStrToIntKind(t *testing.T) {
 	}
 
 	// Test data.
-	tests = []TestIntUintFloat{
-		TestIntUintFloat{"", "0", true, reflect.Int},
-		TestIntUintFloat{"0", "0", true, reflect.Int},
-		TestIntUintFloat{"-3", "-3", true, reflect.Int},
-		TestIntUintFloat{"3", "3", true, reflect.Int},
+	tests = []UIFDataTestType{
+		UIFDataTestType{"", "0", true, reflect.Int},
+		UIFDataTestType{"0", "0", true, reflect.Int},
+		UIFDataTestType{"-3", "-3", true, reflect.Int},
+		UIFDataTestType{"3", "3", true, reflect.Int},
 
-		TestIntUintFloat{"-128", "-128", true, reflect.Int8},
-		TestIntUintFloat{"127", "127", true, reflect.Int8},
+		UIFDataTestType{"-128", "-128", true, reflect.Int8},
+		UIFDataTestType{"127", "127", true, reflect.Int8},
 
-		TestIntUintFloat{maxInt, maxInt, true, reflect.Int},
-		TestIntUintFloat{maxInt8, maxInt8, true, reflect.Int8},
-		TestIntUintFloat{maxInt16, maxInt16, true, reflect.Int16},
-		TestIntUintFloat{maxInt32, maxInt32, true, reflect.Int32},
-		TestIntUintFloat{maxInt64, maxInt64, true, reflect.Int64},
+		UIFDataTestType{maxInt, maxInt, true, reflect.Int},
+		UIFDataTestType{maxInt8, maxInt8, true, reflect.Int8},
+		UIFDataTestType{maxInt16, maxInt16, true, reflect.Int16},
+		UIFDataTestType{maxInt32, maxInt32, true, reflect.Int32},
+		UIFDataTestType{maxInt64, maxInt64, true, reflect.Int64},
 
-		TestIntUintFloat{"string", "0", false, reflect.Int},
-		TestIntUintFloat{"3" + maxInt, "0", false, reflect.Int},
-		TestIntUintFloat{"3" + maxInt8, "0", false, reflect.Int8},
-		TestIntUintFloat{"-129", "0", false, reflect.Int8},
-		TestIntUintFloat{"128", "0", false, reflect.Int8},
-		TestIntUintFloat{"3" + maxInt16, "0", false, reflect.Int16},
-		TestIntUintFloat{"3" + maxInt32, "0", false, reflect.Int32},
-		TestIntUintFloat{"3" + maxInt64, "0", false, reflect.Int64},
-		TestIntUintFloat{"0", "0", false, reflect.Slice},
+		UIFDataTestType{"string", "0", false, reflect.Int},
+		UIFDataTestType{"3" + maxInt, "0", false, reflect.Int},
+		UIFDataTestType{"3" + maxInt8, "0", false, reflect.Int8},
+		UIFDataTestType{"-129", "0", false, reflect.Int8},
+		UIFDataTestType{"128", "0", false, reflect.Int8},
+		UIFDataTestType{"3" + maxInt16, "0", false, reflect.Int16},
+		UIFDataTestType{"3" + maxInt32, "0", false, reflect.Int32},
+		UIFDataTestType{"3" + maxInt64, "0", false, reflect.Int64},
+		UIFDataTestType{"0", "0", false, reflect.Slice},
 	}
 
 	// Test correct values.
@@ -232,7 +232,7 @@ func TestStrToIntKind(t *testing.T) {
 // TestStrToUintKind tests strToUintKind function.
 func TestStrToUintKind(t *testing.T) {
 	var (
-		tests     []TestIntUintFloat
+		tests     []UIFDataTestType
 		maxUint   string = "18446744073709551614"
 		maxUint8  string = fmt.Sprintf("%d", math.MaxUint8-1)
 		maxUint16 string = fmt.Sprintf("%d", math.MaxUint16-1)
@@ -246,24 +246,24 @@ func TestStrToUintKind(t *testing.T) {
 	}
 
 	// Test data.
-	tests = []TestIntUintFloat{
-		TestIntUintFloat{"", "0", true, reflect.Uint},
-		TestIntUintFloat{"0", "0", true, reflect.Uint},
-		TestIntUintFloat{"3", "3", true, reflect.Uint},
-		TestIntUintFloat{maxUint, maxUint, true, reflect.Uint},
-		TestIntUintFloat{maxUint8, maxUint8, true, reflect.Uint8},
-		TestIntUintFloat{maxUint16, maxUint16, true, reflect.Uint16},
-		TestIntUintFloat{maxUint32, maxUint32, true, reflect.Uint32},
-		TestIntUintFloat{maxUint64, maxUint64, true, reflect.Uint64},
+	tests = []UIFDataTestType{
+		UIFDataTestType{"", "0", true, reflect.Uint},
+		UIFDataTestType{"0", "0", true, reflect.Uint},
+		UIFDataTestType{"3", "3", true, reflect.Uint},
+		UIFDataTestType{maxUint, maxUint, true, reflect.Uint},
+		UIFDataTestType{maxUint8, maxUint8, true, reflect.Uint8},
+		UIFDataTestType{maxUint16, maxUint16, true, reflect.Uint16},
+		UIFDataTestType{maxUint32, maxUint32, true, reflect.Uint32},
+		UIFDataTestType{maxUint64, maxUint64, true, reflect.Uint64},
 
-		TestIntUintFloat{"string", "0", false, reflect.Uint},
-		TestIntUintFloat{"-3", "0", false, reflect.Uint},
-		TestIntUintFloat{"9" + maxUint, "0", false, reflect.Uint},
-		TestIntUintFloat{"9" + maxUint8, "0", false, reflect.Uint8},
-		TestIntUintFloat{"9" + maxUint16, "0", false, reflect.Uint16},
-		TestIntUintFloat{"9" + maxUint32, "0", false, reflect.Uint32},
-		TestIntUintFloat{"9" + maxUint64, "0", false, reflect.Uint64},
-		TestIntUintFloat{"0", "0", false, reflect.Slice},
+		UIFDataTestType{"string", "0", false, reflect.Uint},
+		UIFDataTestType{"-3", "0", false, reflect.Uint},
+		UIFDataTestType{"9" + maxUint, "0", false, reflect.Uint},
+		UIFDataTestType{"9" + maxUint8, "0", false, reflect.Uint8},
+		UIFDataTestType{"9" + maxUint16, "0", false, reflect.Uint16},
+		UIFDataTestType{"9" + maxUint32, "0", false, reflect.Uint32},
+		UIFDataTestType{"9" + maxUint64, "0", false, reflect.Uint64},
+		UIFDataTestType{"0", "0", false, reflect.Slice},
 	}
 
 	// Test correct values.
@@ -287,24 +287,24 @@ func TestStrToUintKind(t *testing.T) {
 // TestStrToFloatKind tests strToFloatKind function.
 func TestStrToFloatKind(t *testing.T) {
 	var (
-		tests      []TestIntUintFloat
+		tests      []UIFDataTestType
 		maxFloat32 string = fmt.Sprintf("%.2f", math.MaxFloat32-1)
 		maxFloat64 string = fmt.Sprintf("%.2f", math.MaxFloat64-1)
 	)
 
 	// Test data.
-	tests = []TestIntUintFloat{
-		TestIntUintFloat{"", "0.00", true, reflect.Float64},
-		TestIntUintFloat{"0.0", "0.00", true, reflect.Float64},
-		TestIntUintFloat{"3.0", "3.00", true, reflect.Float64},
-		TestIntUintFloat{"-3.1", "-3.10", true, reflect.Float64},
-		TestIntUintFloat{maxFloat32, maxFloat32, true, reflect.Float32},
-		TestIntUintFloat{maxFloat64, maxFloat64, true, reflect.Float64},
+	tests = []UIFDataTestType{
+		UIFDataTestType{"", "0.00", true, reflect.Float64},
+		UIFDataTestType{"0.0", "0.00", true, reflect.Float64},
+		UIFDataTestType{"3.0", "3.00", true, reflect.Float64},
+		UIFDataTestType{"-3.1", "-3.10", true, reflect.Float64},
+		UIFDataTestType{maxFloat32, maxFloat32, true, reflect.Float32},
+		UIFDataTestType{maxFloat64, maxFloat64, true, reflect.Float64},
 
-		TestIntUintFloat{"string", "0.00", false, reflect.Float64},
-		TestIntUintFloat{"9" + maxFloat32, "0.00", false, reflect.Float32},
-		TestIntUintFloat{"9" + maxFloat64, "0.00", false, reflect.Float64},
-		TestIntUintFloat{"0.00", "0.00", false, reflect.Slice},
+		UIFDataTestType{"string", "0.00", false, reflect.Float64},
+		UIFDataTestType{"9" + maxFloat32, "0.00", false, reflect.Float32},
+		UIFDataTestType{"9" + maxFloat64, "0.00", false, reflect.Float64},
+		UIFDataTestType{"0.00", "0.00", false, reflect.Slice},
 	}
 
 	// Test correct values.

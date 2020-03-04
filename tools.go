@@ -12,8 +12,8 @@ import (
 )
 
 var (
-	incorrectKeyError   = errors.New("bad key")
-	incorrectValueError = errors.New("bad value")
+	KeyError   = errors.New("incorrect key")
+	ValueError = errors.New("incorrect value")
 
 	emptyRegex = regexp.MustCompile(`^(\s*)$|^(\s*[#].*)$`)
 	valueRegex = regexp.MustCompile(`^=[^\s].*`)
@@ -56,7 +56,7 @@ func parseExpression(exp string) (key, value string, err error) {
 	// Remove `export` prefix, `=` suffix and trim spaces.
 	tmp := keyRegex.FindStringSubmatch(exp)
 	if len(tmp) < 2 {
-		err = incorrectKeyError
+		err = KeyError
 		return
 	}
 	key = tmp[1]
@@ -65,7 +65,7 @@ func parseExpression(exp string) (key, value string, err error) {
 	// ... the `=` sign in the string.
 	value = exp[strings.Index(exp, "="):]
 	if !valueRegex.Match([]byte(value)) {
-		err = incorrectValueError
+		err = ValueError
 		return
 	}
 	value = strings.TrimSpace(value[1:])
@@ -80,7 +80,7 @@ func parseExpression(exp string) (key, value string, err error) {
 		value = strings.Replace(value, fmt.Sprintf("\\%s", quote), marker, -1)
 		value = removeInlineComment(value, quote)
 		if strings.Count(value, quote)%2 != 0 { // begin- and end- quotes
-			err = incorrectValueError
+			err = ValueError
 			return
 		}
 		value = value[1 : len(value)-1] // remove begin- and end- quotes
