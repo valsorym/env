@@ -8,9 +8,9 @@ import (
 
 // Error's values.
 var (
-	NotInitializedError = fmt.Errorf("object must be initialized")
-	NotStructureError   = fmt.Errorf("object must be a structure")
-	TypeError           = fmt.Errorf("incorrect type")
+	InitializedError = fmt.Errorf("object must be initialized")
+	ObjectError      = fmt.Errorf("object must be a structure")
+	TypeError        = fmt.Errorf("incorrect type")
 )
 
 // Marshaller describes an interface for implementing
@@ -52,9 +52,9 @@ func marshalENV(scope interface{}) ([]string, error) {
 	// Scope validation.
 	switch {
 	case rt.Kind() != reflect.Struct:
-		return result, NotStructureError
+		return result, ObjectError
 	case !rv.IsValid():
-		return result, NotInitializedError
+		return result, InitializedError
 	}
 
 	// Implements Marshaler interface.
@@ -135,9 +135,9 @@ func unmarshalENV(scope interface{}) error {
 	// Scope validation.
 	switch {
 	case rt.Kind() != reflect.Struct:
-		return NotStructureError
+		return ObjectError
 	case !rv.IsValid():
-		return NotInitializedError
+		return InitializedError
 	}
 
 	// Implements Unmarshaler interface.
