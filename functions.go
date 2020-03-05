@@ -24,7 +24,7 @@ import "os"
 // Make code to loads custom values into environment:
 //
 //    // The method prints environment variables starting with 'KEY_'.
-//    print := func() {
+//    echo := func() {
 //        for _, item := range env.Environ() {
 //            if strings.HasPrefix(item, "KEY_") {
 //                fmt.Println(item)
@@ -34,7 +34,7 @@ import "os"
 //
 //    // Printed only:
 //    //  KEY_0=VALUE_X
-//    print()
+//    echo()
 //
 //    // Load values without replacement.
 //    err := env.Load(".env")
@@ -47,7 +47,7 @@ import "os"
 //    //  KEY_1=VALUE_001  // add new value;
 //    //  KEY_2=VALUE_002  // add new value and replaced ${LAST_ID}
 //                         // to the plain text.
-//    print()
+//    echo()
 func Load(filename string) error {
 	var expand, update, forced = true, false, false
 	return ReadParseStore(filename, expand, update, forced)
@@ -74,7 +74,7 @@ func Load(filename string) error {
 // Make code to loads custom values into environment:
 //
 //    // The method prints environment variables starting with 'KEY_'.
-//    print := func() {
+//    echo := func() {
 //        for _, item := range env.Environ() {
 //            if strings.HasPrefix(item, "KEY_") {
 //                fmt.Println(item)
@@ -84,7 +84,7 @@ func Load(filename string) error {
 //
 //    // Printed only:
 //    //  KEY_0=VALUE_X
-//    print()
+//    echo()
 //
 //    // Load values without replacement.
 //    err := env.LoadSafe(".env")
@@ -96,7 +96,7 @@ func Load(filename string) error {
 //    //  KEY_0=VALUE_X            // not replaced by VALUE_001;
 //    //  KEY_1=VALUE_001         // add new value;
 //    //  KEY_2=VALUE_${LAST_ID}  // add new value without replecing $var.
-//    print()
+//    echo()
 func LoadSafe(filename string) error {
 	var expand, update, forced = false, false, false
 	return ReadParseStore(filename, expand, update, forced)
@@ -124,7 +124,7 @@ func LoadSafe(filename string) error {
 // Make code to loads custom values into environment:
 //
 //    // The method prints environment variables starting with 'KEY_'.
-//    print := func() {
+//    echo := func() {
 //        for _, item := range env.Environ() {
 //            if strings.HasPrefix(item, "KEY_") {
 //                fmt.Println(item)
@@ -134,7 +134,7 @@ func LoadSafe(filename string) error {
 //
 //    // Printed only:
 //    //  KEY_0=VALUE_X
-//    print()
+//    echo()
 //
 //    // Load values with replacement.
 //    err := env.Update(".env")
@@ -147,7 +147,7 @@ func LoadSafe(filename string) error {
 //    //  KEY_1=VALUE_001  // add new value;
 //    //  KEY_2=VALUE_002  // add new value and replaced ${LAST_ID}
 //                         // to the plain text.
-//    print()
+//    echo()
 func Update(filename string) error {
 	var expand, update, forced = true, true, false
 	return ReadParseStore(filename, expand, update, forced)
@@ -174,7 +174,7 @@ func Update(filename string) error {
 // Make code to loads custom values into environment:
 //
 //    // The method prints environment variables starting with 'KEY_'.
-//    print := func() {
+//    echo := func() {
 //        for _, item := range env.Environ() {
 //            if strings.HasPrefix(item, "KEY_") {
 //                fmt.Println(item)
@@ -184,7 +184,7 @@ func Update(filename string) error {
 //
 //    // Printed only:
 //    //  KEY_0=VALUE_X
-//    print()
+//    echo()
 //
 //    // Load values with replacement.
 //    err := env.Update(".env")
@@ -196,13 +196,14 @@ func Update(filename string) error {
 //    //  KEY_0=VALUE_000         // data has been updated;
 //    //  KEY_1=VALUE_001         // add new value;
 //    //  KEY_2=VALUE_${LAST_ID}  // add new value without replecing $var.
-//    print()
+//    echo()
 func UpdateSafe(filename string) error {
 	var expand, update, forced = false, true, false
 	return ReadParseStore(filename, expand, update, forced)
 }
 
 // Exists returns true if all keys sets in the environment.
+//
 // Examples:
 //
 // Suppose that the some value was set into environment as:
