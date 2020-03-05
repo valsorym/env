@@ -191,16 +191,27 @@ func unmarshalENV(scope interface{}) error {
 			instance.SetBool(r)
 		case reflect.String:
 			instance.SetString(Get(name))
-		case reflect.Slice:
-			tmp := reflect.MakeSlice(instance.Type(), 1, 1)
-			err := setSlice(
-				&instance,
-				strings.Split(Get(name), sep),
-				tmp.Index(0).Kind(),
-			)
+		case reflect.Array:
+			max := instance.Type().Len()
+			seq := strings.Split(Get(name), sep)
+			if len(seq) > max {
+				return fmt.Errorf("%d items overwhelms the [%d]array",
+					len(seq), max)
+			}
+
+			err := setSequence(&instance, strings.Split(Get(name), sep))
 			if err != nil {
 				return err
 			}
+		case reflect.Slice:
+			seq := strings.Split(Get(name), sep)
+			tmp := reflect.MakeSlice(instance.Type(), len(seq), len(seq))
+			err := setSequence(&tmp, strings.Split(Get(name), sep))
+			if err != nil {
+				return err
+			}
+
+			instance.Set(reflect.AppendSlice(instance, tmp))
 		default:
 			return TypeError
 		} // switch
@@ -210,15 +221,8 @@ func unmarshalENV(scope interface{}) error {
 }
 
 // setSlice sets slice into instance.
-func setSlice(instance *reflect.Value,
-	seq []string, kind reflect.Kind) (err error) {
-	var (
-		intSeq    []int64
-		uintSeq   []uint64
-		floatSeq  []float64
-		stringSeq []string
-		boolSeq   []bool
-	)
+func setSequence(instance *reflect.Value, seq []string) (err error) {
+	var kind = instance.Index(0).Kind()
 
 	defer func() {
 		// Catch the panic and return an exception as a value.
@@ -227,124 +231,56 @@ func setSlice(instance *reflect.Value,
 		}
 	}()
 
+	// Ignore empty containers.
+	switch {
+	case kind == reflect.Array && instance.Type().Len() == 0:
+		fallthrough
+	case kind == reflect.Slice && instance.Len() == 0:
+		return nil
+	}
+
 	// Convert to correct type slice.
 	switch kind {
 	case reflect.Int, reflect.Int8, reflect.Int16,
 		reflect.Int32, reflect.Int64:
-		intSeq = make([]int64, 0, len(seq))
-		for _, value := range seq {
+		for i, value := range seq {
 			r, err := strToIntKind(value, kind)
 			if err != nil {
 				return err
 			}
-			intSeq = append(intSeq, r)
+			instance.Index(i).SetInt(r)
 		}
 	case reflect.Uint, reflect.Uint8, reflect.Uint16,
 		reflect.Uint32, reflect.Uint64:
-		uintSeq = make([]uint64, 0, len(seq))
-		for _, value := range seq {
+		for i, value := range seq {
 			r, err := strToUintKind(value, kind)
 			if err != nil {
 				return err
 			}
-			uintSeq = append(uintSeq, r)
+			instance.Index(i).SetUint(r)
 		}
 	case reflect.Float32, reflect.Float64:
-		floatSeq = make([]float64, 0, len(seq))
-		for _, value := range seq {
+		for i, value := range seq {
 			r, err := strToFloatKind(value, kind)
 			if err != nil {
 				return err
 			}
-			floatSeq = append(floatSeq, r)
+			instance.Index(i).SetFloat(r)
 		}
 	case reflect.Bool:
-		boolSeq = make([]bool, 0, len(seq))
-		for _, value := range seq {
+		for i, value := range seq {
 			r, err := strToBool(value)
 			if err != nil {
 				return err
 			}
-			boolSeq = append(boolSeq, r)
+			instance.Index(i).SetBool(r)
 		}
 	case reflect.String:
-		stringSeq = seq
+		for i, value := range seq {
+			instance.Index(i).SetString(value)
+		}
 	default:
 		return TypeError
-	}
-
-	// Set correct value.
-	switch kind {
-	case reflect.Int:
-		for _, v := range intSeq {
-			value := reflect.ValueOf(int(v))
-			instance.Set(reflect.Append(*instance, value))
-		}
-	case reflect.Int8:
-		for _, v := range intSeq {
-			value := reflect.ValueOf(int8(v))
-			instance.Set(reflect.Append(*instance, value))
-		}
-	case reflect.Int16:
-		for _, v := range intSeq {
-			value := reflect.ValueOf(int16(v))
-			instance.Set(reflect.Append(*instance, value))
-		}
-	case reflect.Int32:
-		for _, v := range intSeq {
-			value := reflect.ValueOf(int32(v))
-			instance.Set(reflect.Append(*instance, value))
-		}
-	case reflect.Int64:
-		for _, v := range intSeq {
-			value := reflect.ValueOf(int64(v))
-			instance.Set(reflect.Append(*instance, value))
-		}
-	case reflect.Uint:
-		for _, v := range uintSeq {
-			value := reflect.ValueOf(uint(v))
-			instance.Set(reflect.Append(*instance, value))
-		}
-	case reflect.Uint8:
-		for _, v := range uintSeq {
-			value := reflect.ValueOf(uint8(v))
-			instance.Set(reflect.Append(*instance, value))
-		}
-	case reflect.Uint16:
-		for _, v := range uintSeq {
-			value := reflect.ValueOf(uint16(v))
-			instance.Set(reflect.Append(*instance, value))
-		}
-	case reflect.Uint32:
-		for _, v := range uintSeq {
-			value := reflect.ValueOf(uint32(v))
-			instance.Set(reflect.Append(*instance, value))
-		}
-	case reflect.Uint64:
-		for _, v := range uintSeq {
-			value := reflect.ValueOf(uint64(v))
-			instance.Set(reflect.Append(*instance, value))
-		}
-	case reflect.Float32:
-		for _, v := range floatSeq {
-			value := reflect.ValueOf(float32(v))
-			instance.Set(reflect.Append(*instance, value))
-		}
-	case reflect.Float64:
-		for _, v := range floatSeq {
-			value := reflect.ValueOf(float64(v))
-			instance.Set(reflect.Append(*instance, value))
-		}
-	case reflect.Bool:
-		for _, v := range boolSeq {
-			value := reflect.ValueOf(bool(v))
-			instance.Set(reflect.Append(*instance, value))
-		}
-	case reflect.String:
-		for _, v := range stringSeq {
-			value := reflect.ValueOf(string(v))
-			instance.Set(reflect.Append(*instance, value))
-		}
 	}
 
 	return nil

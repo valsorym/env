@@ -61,6 +61,13 @@ type PlainTestType struct {
 	AllowedHosts []string `env:"ALLOWED_HOSTS,:"`
 }
 
+// PlainTestType simple complex type with array (not slice).
+type PlainArrayTestType struct {
+	Host         string    `env:"HOST"`
+	Port         int       `env:"PORT"`
+	AllowedHosts [3]string `env:"ALLOWED_HOSTS,:"`
+}
+
 // Extended simple complex type that implements
 // Marshaller and Unmarshaller interfaces.
 type ExtendedTestType struct {
@@ -592,8 +599,55 @@ func TestUnmarshalENV(t *testing.T) {
 	}
 
 	str := strings.Replace(fmt.Sprint(scope.AllowedHosts), " ", ":", -1)
-	if strings.Trim(str, "[]") != "localhost:127.0.0.1" {
-		t.Errorf("Incorrect value set for PORT: %v", scope.AllowedHosts)
+	if value := strings.Trim(str, "[]:"); value != "localhost:127.0.0.1" {
+		t.Errorf("Incorrect value set for ALLOWED_HOSTS: %s", value)
+	}
+}
+
+// TestUnmarshalENVArray tests unmarshalENV function with array.
+func TestUnmarshalENVArray(t *testing.T) {
+	var scope = &PlainArrayTestType{}
+
+	// Set test data.
+	Clear()
+	Set("HOST", "localhost")
+	Set("PORT", "8080")
+	Set("ALLOWED_HOSTS", "localhost:127.0.0.1")
+
+	err := unmarshalENV(scope)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Test marshalling.
+	if scope.Host != "localhost" {
+		t.Errorf("Incorrect value set for HOST: %s", scope.Host)
+	}
+
+	if scope.Port != 8080 {
+		t.Errorf("Incorrect value set for PORT: %d", scope.Port)
+	}
+
+	str := strings.Replace(fmt.Sprint(scope.AllowedHosts), " ", ":", -1)
+	if value := strings.Trim(str, "[]:"); value != "localhost:127.0.0.1" {
+		t.Errorf("Incorrect value set for ALLOWED_HOSTS: %s", value)
+	}
+}
+
+// TestUnmarshalENVArrayOverflow tests unmarshalENV function
+// with array overflow.
+func TestUnmarshalENVArrayOverflow(t *testing.T) {
+	var scope = &PlainArrayTestType{}
+
+	// Set test data.
+	Clear()
+	Set("HOST", "localhost")
+	Set("PORT", "8080")
+	Set("ALLOWED_HOSTS", "localhost:127.0.0.1:0.0.0.0:192.168.0.1") // 4 items
+
+	err := unmarshalENV(scope)
+	if err == nil {
+		t.Error("there must be an array overflow error")
 	}
 }
 
@@ -623,7 +677,7 @@ func TestUnmarshalENVCustom(t *testing.T) {
 	}
 
 	str := strings.Replace(fmt.Sprint(scope.AllowedHosts), " ", ":", -1)
-	if strings.Trim(str, "[]") != "192.168.0.1" {
-		t.Errorf("Incorrect value set for PORT: %v", scope.AllowedHosts)
+	if value := strings.Trim(str, "[]"); value != "192.168.0.1" {
+		t.Errorf("Incorrect value set for ALLOWED_HOSTS: %v", value)
 	}
 }
