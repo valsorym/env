@@ -218,7 +218,7 @@ if err != nil {
 }
 
 // Printed all variables:
-//  KEY_0=VALUE_X            // not replaced by VALUE_001;
+//  KEY_0=VALUE_X           // not replaced by VALUE_001;
 //  KEY_1=VALUE_001         // add new value;
 //  KEY_2=VALUE_${LAST_ID}  // add new value without replecing $var.
 echo()
