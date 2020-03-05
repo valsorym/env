@@ -94,9 +94,11 @@ func marshalENV(scope interface{}) ([]string, error) {
 			value = fmt.Sprintf("%t", instance.Bool())
 		case reflect.String:
 			value = fmt.Sprintf("%s", instance.String())
+		case reflect.Array:
+			fallthrough
 		case reflect.Slice:
 			str := strings.Replace(fmt.Sprint(instance), " ", sep, -1)
-			value = strings.Trim(str, "[]")
+			value = strings.Trim(str, "[]:")
 		default:
 			return result, TypeError
 		} // switch
