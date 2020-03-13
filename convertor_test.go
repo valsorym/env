@@ -9,8 +9,12 @@ import (
 
 // URLTestType
 type URLTestType struct {
-	KeyURLPlain url.URL  `env:"KEY_URL_PLAIN"`
-	KeyURLPoint *url.URL `env:"KEY_URL_POINT"`
+	KeyURLPlain      url.URL     `env:"KEY_URL_PLAIN"`
+	KeyURLPoint      *url.URL    `env:"KEY_URL_POINT"`
+	KeyURLPlainSlice []url.URL   `env:"KEY_URL_PLAIN_SLICE,!"`
+	KeyURLPointSlice []*url.URL  `env:"KEY_URL_POINT_SLICE,!"`
+	KeyURLPlainArray [2]url.URL  `env:"KEY_URL_PLAIN_ARRAY,!"`
+	KeyURLPointArray [2]*url.URL `env:"KEY_URL_POINT_ARRAY,!"`
 }
 
 // NumberTestType structure for testing conversion of numeric types.
@@ -691,13 +695,31 @@ func TestUnmarshalENVCustom(t *testing.T) {
 
 // TestMarshalURL tests marshaling of the URL.
 func TestMarshalURL(t *testing.T) {
+	var test string
 	var data = URLTestType{
 		KeyURLPlain: url.URL{Scheme: "http", Host: "plain.example.com"},
 		KeyURLPoint: &url.URL{Scheme: "http", Host: "point.example.com"},
+		KeyURLPlainSlice: []url.URL{
+			url.URL{Scheme: "http", Host: "a.plain.example.com"},
+			url.URL{Scheme: "http", Host: "b.plain.example.com"},
+		},
+		KeyURLPointSlice: []*url.URL{
+			&url.URL{Scheme: "http", Host: "a.point.example.com"},
+			&url.URL{Scheme: "http", Host: "b.point.example.com"},
+		},
+		KeyURLPlainArray: [2]url.URL{
+			url.URL{Scheme: "http", Host: "c.plain.example.com"},
+			url.URL{Scheme: "http", Host: "d.plain.example.com"},
+		},
+		KeyURLPointArray: [2]*url.URL{
+			&url.URL{Scheme: "http", Host: "c.point.example.com"},
+			&url.URL{Scheme: "http", Host: "d.point.example.com"},
+		},
 	}
 
 	Marshal(data)
 
+	// Tests results.
 	if v := Get("KEY_URL_PLAIN"); v != "http://plain.example.com" {
 		t.Errorf("Incorrect marshaling plain url.URL: %s", v)
 	}
@@ -705,22 +727,100 @@ func TestMarshalURL(t *testing.T) {
 	if v := Get("KEY_URL_POINT"); v != "http://point.example.com" {
 		t.Errorf("Incorrect marshaling poin url.URL: %s", v)
 	}
+
+	// Plain slice.
+	test = "http://a.plain.example.com!http://b.plain.example.com"
+	if v := Get("KEY_URL_PLAIN_SLICE"); v != test {
+		t.Errorf("Incorrect marshaling poin slice []url.URL: %s", v)
+	}
+
+	// Point slice.
+	test = "http://a.point.example.com!http://b.point.example.com"
+	if v := Get("KEY_URL_POINT_SLICE"); v != test {
+		t.Errorf("Incorrect marshaling point slice []*url.URL: %s", v)
+	}
+
+	// Plain array.
+	test = "http://c.plain.example.com!http://d.plain.example.com"
+	if v := Get("KEY_URL_PLAIN_ARRAY"); v != test {
+		t.Errorf("Incorrect marshaling plain array []url.URL: %s", v)
+	}
+
+	// Point array.
+	test = "http://c.point.example.com!http://d.point.example.com"
+	if v := Get("KEY_URL_POINT_ARRAY"); v != test {
+		t.Errorf("Incorrect marshaling point array []*url.URL: %s", v)
+	}
 }
 
 // TestUnmarshalURL tests unmarshaling of the URL.
 func TestUnmarshalURL(t *testing.T) {
-	var data = URLTestType{}
+	var (
+		slice []string
+		str   string
+
+		data = URLTestType{}
+	)
 
 	Set("KEY_URL_PLAIN", "http://plain.example.com")
 	Set("KEY_URL_POINT", "http://point.example.com")
+	Set("KEY_URL_PLAIN_SLICE",
+		"http://a.plain.example.com!http://b.plain.example.com")
+	Set("KEY_URL_POINT_SLICE",
+		"http://a.point.example.com!http://b.point.example.com")
+	Set("KEY_URL_PLAIN_ARRAY",
+		"http://c.plain.example.com!http://d.plain.example.com")
+	Set("KEY_URL_POINT_ARRAY",
+		"http://c.point.example.com!http://d.point.example.com")
 
 	Unmarshal(&data)
 
+	// Tests results.
 	if v := data.KeyURLPlain.String(); v != "http://plain.example.com" {
 		t.Errorf("Incorrect unmarshaling plain url.URL: %s", v)
 	}
 
 	if v := data.KeyURLPoint.String(); v != "http://point.example.com" {
 		t.Errorf("Incorrect unmarshaling point url.URL: %s", v)
+	}
+
+	// Plain slice.
+	slice = []string{}
+	for _, v := range data.KeyURLPlainSlice {
+		slice = append(slice, v.String())
+	}
+	str = strings.Trim(strings.Replace(fmt.Sprint(slice), " ", "!", -1), "[]")
+	if str != "http://a.plain.example.com!http://b.plain.example.com" {
+		t.Errorf("Incorrect unmarshaling plain slice []url.URL: %s", str)
+	}
+
+	// Point slice.
+	slice = []string{}
+	for _, v := range data.KeyURLPointSlice {
+		slice = append(slice, v.String())
+	}
+	str = strings.Trim(strings.Replace(fmt.Sprint(slice), " ", "!", -1), "[]")
+	if str != "http://a.point.example.com!http://b.point.example.com" {
+		t.Errorf("Incorrect unmarshaling point alice []*url.URL: %s", str)
+	}
+
+	// Plain array.
+	slice = []string{}
+	for _, v := range data.KeyURLPlainArray {
+		slice = append(slice, v.String())
+	}
+	str = strings.Trim(strings.Replace(fmt.Sprint(slice), " ", "!", -1), "[]")
+	if str != "http://c.plain.example.com!http://d.plain.example.com" {
+		t.Errorf("Incorrect unmarshaling plain array [2]url.URL: %s", str)
+	}
+
+	// Point array.
+	slice = []string{}
+	for _, v := range data.KeyURLPointArray {
+		slice = append(slice, v.String())
+	}
+	str = strings.Trim(strings.Replace(fmt.Sprint(slice), " ", "!", -1), "[]")
+	if str != "http://c.point.example.com!http://d.point.example.com" {
+		t.Errorf("Incorrect unmarshaling point array [2]*url.URL: %s", str)
 	}
 }

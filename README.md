@@ -87,7 +87,10 @@ func main() {
 
 ## Types
 
-Parser supports the following field types: `int`, `int8`, `int16`, `int32`, `int64`, `uin`, `uint8`, `uin16`, `uint32`, `uin64`, `float32`, `float64`, `string`, `bool` and `array` or `slice` <ins>from thous types</ins> *(i.e. `[]int`, `[]int8`, ..., `[]bool`)*. For other filed's types will be returned an error - **`env.TypeError`**.
+Parser supports the following field types: `int`, `int8`, `int16`, `int32`,
+`int64`, `uin`, `uint8`, `uin16`, `uint32`, `uin64`, `float32`, `float64`,
+`string`, `bool`, `url.URL`, `*url.URL` and `array` or `slice` from thous types
+*(i.e. `[]int`, `[]int8`, ..., `[]bool`)*. For other filed's types will be returned an error - **`env.TypeError`**.
 
 # Get lib
 
@@ -374,7 +377,8 @@ value pointed to by scope. If scope isn't struct, not a pointer or is nil -
 returns an error.
 
 Supports the following field types: `int`, `int8`, `int16`, `int32`, `int64`, `uin`,
-`uint8`, `uin16`, `uint32`, `uin64`, `float32`, `float64`, `string`, `bool` and `array` or `slice`
+`uint8`, `uin16`, `uint32`, `uin64`, `float32`, `float64`, `string`, `bool`, `url.URL`,
+`*url.URL` and `array` or `slice`
 from thous types. For other filed's types will be returned an error.
 
 If the structure implements Unmarshaller interface - the custom UnmarshalENV
@@ -450,7 +454,8 @@ of the data that was correct set into environment. The seconden -
 error or nil.
 
 Supports the following field types: `int`, `int8`, `int16`, `int32`, `int64`, `uin`,
-`uint8`, `uin16`, `uint32`, `uin64`, `float32`, `float64`, `string`, `bool` and `array` or `slice`
+`uint8`, `uin16`, `uint32`, `uin64`, `float32`, `float64`, `string`, `bool`, `url.URL`,
+`*url.URL` and `array` or `slice`
 from thous types. For other filed's types will be returned an error.
 
 If the structure implements Marshaller interface - the custom MarshalENV

@@ -36,6 +36,7 @@ func marshalENV(scope interface{}) ([]string, error) {
 		rv reflect.Value // value
 		rp reflect.Value // pointer
 
+		err    error
 		result []string
 	)
 
@@ -96,10 +97,15 @@ func marshalENV(scope interface{}) ([]string, error) {
 		case reflect.String:
 			value = fmt.Sprintf("%s", instance.String())
 		case reflect.Array:
-			fallthrough
+			value, err = getSequence(&instance, sep)
+			if err != nil {
+				return result, err
+			}
 		case reflect.Slice:
-			str := strings.Replace(fmt.Sprint(instance), " ", sep, -1)
-			value = strings.Trim(str, "[]:")
+			value, err = getSequence(&instance, sep)
+			if err != nil {
+				return result, err
+			}
 		case reflect.TypeOf(&url.URL{}).Kind():
 			instance = instance.Elem()
 			fallthrough
@@ -241,6 +247,46 @@ func unmarshalENV(scope interface{}) error {
 	return nil
 }
 
+// getSequence get sequence as string.
+func getSequence(instance *reflect.Value, sep string) (string, error) {
+	var kind reflect.Kind
+	var max int
+
+	switch instance.Kind() {
+	case reflect.Array:
+		kind = instance.Index(0).Kind()
+		max = instance.Type().Len()
+	case reflect.Slice:
+		tmp := reflect.MakeSlice(instance.Type(), 1, 1)
+		kind = tmp.Index(0).Kind()
+		max = instance.Len()
+	default:
+		return "", TypeError
+	}
+
+	switch kind {
+	case reflect.TypeOf(&url.URL{}).Kind():
+		var tmp = []string{}
+		for i := 0; i < max; i++ {
+			v := instance.Index(i).Elem().Interface().(url.URL)
+			tmp = append(tmp, v.String())
+		}
+		str := strings.Replace(fmt.Sprint(tmp), " ", sep, -1)
+		return strings.Trim(str, "[]"+sep), nil
+	case reflect.TypeOf(url.URL{}).Kind():
+		var tmp = []string{}
+		for i := 0; i < max; i++ {
+			v := instance.Index(i).Interface().(url.URL)
+			tmp = append(tmp, v.String())
+		}
+		str := strings.Replace(fmt.Sprint(tmp), " ", sep, -1)
+		return strings.Trim(str, "[]"+sep), nil
+	}
+	str := strings.Replace(fmt.Sprint(*instance), " ", sep, -1)
+	return strings.Trim(str, "[]"+sep), nil
+
+}
+
 // setSlice sets slice into instance.
 func setSequence(instance *reflect.Value, seq []string) (err error) {
 	var kind = instance.Index(0).Kind()
@@ -299,6 +345,24 @@ func setSequence(instance *reflect.Value, seq []string) (err error) {
 	case reflect.String:
 		for i, value := range seq {
 			instance.Index(i).SetString(value)
+		}
+	case reflect.TypeOf(&url.URL{}).Kind():
+		for i, value := range seq {
+			u, err := url.Parse(value)
+			if err != nil {
+				return err
+			}
+
+			instance.Index(i).Set(reflect.ValueOf(u))
+		}
+	case reflect.TypeOf(url.URL{}).Kind():
+		for i, value := range seq {
+			u, err := url.Parse(value)
+			if err != nil {
+				return err
+			}
+
+			instance.Index(i).Set(reflect.ValueOf(*u))
 		}
 	default:
 		return TypeError
