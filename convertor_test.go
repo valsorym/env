@@ -2,9 +2,16 @@ package env
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 	"testing"
 )
+
+// URLTestType
+type URLTestType struct {
+	KeyURLPlain url.URL  `env:"KEY_URL_PLAIN"`
+	KeyURLPoint *url.URL `env:"KEY_URL_POINT"`
+}
 
 // NumberTestType structure for testing conversion of numeric types.
 type NumberTestType struct {
@@ -679,5 +686,41 @@ func TestUnmarshalENVCustom(t *testing.T) {
 	str := strings.Replace(fmt.Sprint(scope.AllowedHosts), " ", ":", -1)
 	if value := strings.Trim(str, "[]"); value != "192.168.0.1" {
 		t.Errorf("Incorrect value set for ALLOWED_HOSTS: %v", value)
+	}
+}
+
+// TestMarshalURL tests marshaling of the URL.
+func TestMarshalURL(t *testing.T) {
+	var data = URLTestType{
+		KeyURLPlain: url.URL{Scheme: "http", Host: "plain.example.com"},
+		KeyURLPoint: &url.URL{Scheme: "http", Host: "point.example.com"},
+	}
+
+	Marshal(data)
+
+	if v := Get("KEY_URL_PLAIN"); v != "http://plain.example.com" {
+		t.Errorf("Incorrect marshaling plain url.URL: %s", v)
+	}
+
+	if v := Get("KEY_URL_POINT"); v != "http://point.example.com" {
+		t.Errorf("Incorrect marshaling poin url.URL: %s", v)
+	}
+}
+
+// TestUnmarshalURL tests unmarshaling of the URL.
+func TestUnmarshalURL(t *testing.T) {
+	var data = URLTestType{}
+
+	Set("KEY_URL_PLAIN", "http://plain.example.com")
+	Set("KEY_URL_POINT", "http://point.example.com")
+
+	Unmarshal(&data)
+
+	if v := data.KeyURLPlain.String(); v != "http://plain.example.com" {
+		t.Errorf("Incorrect unmarshaling plain url.URL: %s", v)
+	}
+
+	if v := data.KeyURLPoint.String(); v != "http://point.example.com" {
+		t.Errorf("Incorrect unmarshaling point url.URL: %s", v)
 	}
 }

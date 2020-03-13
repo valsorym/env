@@ -2,6 +2,7 @@ package env
 
 import (
 	"fmt"
+	"net/url"
 	"reflect"
 	"strings"
 )
@@ -99,6 +100,12 @@ func marshalENV(scope interface{}) ([]string, error) {
 		case reflect.Slice:
 			str := strings.Replace(fmt.Sprint(instance), " ", sep, -1)
 			value = strings.Trim(str, "[]:")
+		case reflect.TypeOf(&url.URL{}).Kind():
+			instance = instance.Elem()
+			fallthrough
+		case reflect.TypeOf(url.URL{}).Kind():
+			u := instance.Interface().(url.URL)
+			value = u.String()
 		default:
 			return result, TypeError
 		} // switch
@@ -212,6 +219,20 @@ func unmarshalENV(scope interface{}) error {
 			}
 
 			instance.Set(reflect.AppendSlice(instance, tmp))
+		case reflect.TypeOf(&url.URL{}).Kind():
+			u, err := url.Parse(Get(name))
+			if err != nil {
+				return err
+			}
+
+			instance.Set(reflect.ValueOf(u))
+		case reflect.TypeOf(url.URL{}).Kind():
+			u, err := url.Parse(Get(name))
+			if err != nil {
+				return err
+			}
+
+			instance.Set(reflect.ValueOf(*u))
 		default:
 			return TypeError
 		} // switch
