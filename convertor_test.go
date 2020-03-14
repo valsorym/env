@@ -7,7 +7,25 @@ import (
 	"testing"
 )
 
-// URLTestType
+type Address struct {
+	Country string `env:"COUNTRY"`
+	Town    string `env:"TOWN"`
+}
+
+// User internal structure for StructTestType type.
+type User struct {
+	Name    string  `env:"NAME"`
+	Email   string  `env:"EMAIL"`
+	Address Address `env:"ADDRESS"`
+}
+
+// StructTestType structure for testing struct values.
+type StructTestType struct {
+	User     User    `env:"USER"`
+	HomePage url.URL `env:"HOME_PAGE"`
+}
+
+// URLTestType structure for testing url.URL values.
 type URLTestType struct {
 	KeyURLPlain      url.URL     `env:"KEY_URL_PLAIN"`
 	KeyURLPoint      *url.URL    `env:"KEY_URL_POINT"`
@@ -136,7 +154,7 @@ func TestUnmarshalENVNumber(t *testing.T) {
 			Clear()
 			Set(key, data[i])
 
-			err := unmarshalENV(d)
+			err := unmarshalENV(d, "")
 			switch i {
 			case 0:
 				if err != nil {
@@ -233,7 +251,7 @@ func TestUnmarshalENVBool(t *testing.T) {
 		Clear()
 		Set("KEY_BOOL", value)
 
-		err := unmarshalENV(d)
+		err := unmarshalENV(d, "")
 		if err != nil {
 			t.Error(err)
 		}
@@ -250,7 +268,7 @@ func TestUnmarshalENVBool(t *testing.T) {
 		Clear()
 		Set("KEY_BOOL", value)
 
-		err := unmarshalENV(d)
+		err := unmarshalENV(d, "")
 		if err == nil {
 			t.Error("didn't handle the error")
 		}
@@ -275,7 +293,7 @@ func TestUnmarshalENVString(t *testing.T) {
 		Clear()
 		Set("KEY_STRING", s)
 
-		err := unmarshalENV(d)
+		err := unmarshalENV(d, "")
 		if err != nil {
 			t.Error(err)
 		}
@@ -321,7 +339,7 @@ func TestUnmarshalENVSliceCorrect(t *testing.T) {
 		Clear()
 		Set(key, value)
 
-		err := unmarshalENV(d)
+		err := unmarshalENV(d, "")
 		if err != nil {
 			t.Error(err)
 		}
@@ -415,7 +433,7 @@ func TestUnmarshalENVSliceIncorrect(t *testing.T) {
 		Clear()
 		Set(key, value)
 
-		err := unmarshalENV(d)
+		err := unmarshalENV(d, "")
 		if err == nil {
 			t.Error("must be error")
 		}
@@ -425,7 +443,7 @@ func TestUnmarshalENVSliceIncorrect(t *testing.T) {
 // TestMarshalENVNotStruct tests marshalENV function for not struct values.
 func TestMarshalNotStruct(t *testing.T) {
 	var scope string
-	_, err := marshalENV(scope)
+	_, err := marshalENV(scope, "")
 	if err == nil {
 		t.Error("exception expected for an object other than structure")
 	}
@@ -435,7 +453,7 @@ func TestMarshalNotStruct(t *testing.T) {
 // for uninitialized pointer.
 func TestMarshalENVPointerNil(t *testing.T) {
 	var scope *PlainTestType
-	_, err := marshalENV(scope)
+	_, err := marshalENV(scope, "")
 	if err == nil {
 		t.Error("exception expected for an uninitialized object")
 	}
@@ -450,7 +468,7 @@ func TestMarshalENVObj(t *testing.T) {
 	}
 
 	Clear()
-	_, err := marshalENV(scope)
+	_, err := marshalENV(scope, "")
 	if err != nil {
 		t.Error(err)
 	}
@@ -479,7 +497,7 @@ func TestMarshalENVPointer(t *testing.T) {
 	}
 
 	Clear()
-	_, err := marshalENV(scope)
+	_, err := marshalENV(scope, "")
 	if err != nil {
 		t.Error(err)
 	}
@@ -508,7 +526,7 @@ func TestMarshalENVObjCustom(t *testing.T) {
 	}
 
 	Clear()
-	_, err := marshalENV(scope)
+	_, err := marshalENV(scope, "")
 	if err != nil {
 		t.Error(err)
 	}
@@ -537,7 +555,7 @@ func TestMarshalENVPointerCustom(t *testing.T) {
 	}
 
 	Clear()
-	_, err := marshalENV(scope)
+	_, err := marshalENV(scope, "")
 	if err != nil {
 		t.Error(err)
 	}
@@ -559,7 +577,7 @@ func TestMarshalENVPointerCustom(t *testing.T) {
 // TestUnmarshalENVNotStruct tests unmarshalENV function for not struct values.
 func TestUnmarshalNotStruct(t *testing.T) {
 	var scope string
-	err := unmarshalENV(scope)
+	err := unmarshalENV(scope, "")
 	if err == nil {
 		t.Error("exception expected for an object other than structure")
 	}
@@ -569,7 +587,7 @@ func TestUnmarshalNotStruct(t *testing.T) {
 // for not pointer value.
 func TestUnmarshalNotPointer(t *testing.T) {
 	var scope PlainTestType
-	err := unmarshalENV(scope)
+	err := unmarshalENV(scope, "")
 	if err == nil {
 		t.Error("exception expected for not pointer")
 	}
@@ -579,7 +597,7 @@ func TestUnmarshalNotPointer(t *testing.T) {
 // for uninitialized pointer.
 func TestUnmarshalPointerNil(t *testing.T) {
 	var scope *PlainTestType
-	err := unmarshalENV(scope)
+	err := unmarshalENV(scope, "")
 	if err == nil {
 		t.Error("exception expected for an uninitialized object")
 	}
@@ -595,7 +613,7 @@ func TestUnmarshalENV(t *testing.T) {
 	Set("PORT", "8080")
 	Set("ALLOWED_HOSTS", "localhost:127.0.0.1")
 
-	err := unmarshalENV(scope)
+	err := unmarshalENV(scope, "")
 	if err != nil {
 		t.Error(err)
 	}
@@ -625,7 +643,7 @@ func TestUnmarshalENVArray(t *testing.T) {
 	Set("PORT", "8080")
 	Set("ALLOWED_HOSTS", "localhost:127.0.0.1")
 
-	err := unmarshalENV(scope)
+	err := unmarshalENV(scope, "")
 	if err != nil {
 		t.Error(err)
 	}
@@ -656,7 +674,7 @@ func TestUnmarshalENVArrayOverflow(t *testing.T) {
 	Set("PORT", "8080")
 	Set("ALLOWED_HOSTS", "localhost:127.0.0.1:0.0.0.0:192.168.0.1") // 4 items
 
-	err := unmarshalENV(scope)
+	err := unmarshalENV(scope, "")
 	if err == nil {
 		t.Error("there must be an array overflow error")
 	}
@@ -673,7 +691,7 @@ func TestUnmarshalENVCustom(t *testing.T) {
 	Set("PORT", "8080")                         // default: 80
 	Set("ALLOWED_HOSTS", "localhost:127.0.0.1") // default: 192.168.0.1
 
-	err := unmarshalENV(scope)
+	err := unmarshalENV(scope, "")
 	if err != nil {
 		t.Error(err)
 	}
@@ -822,5 +840,75 @@ func TestUnmarshalURL(t *testing.T) {
 	str = strings.Trim(strings.Replace(fmt.Sprint(slice), " ", "!", -1), "[]")
 	if str != "http://c.point.example.com!http://d.point.example.com" {
 		t.Errorf("Incorrect unmarshaling point array [2]*url.URL: %s", str)
+	}
+}
+
+// TestMarshalStruct tests marshaling of the Struct.
+func TestMarshalStruct(t *testing.T) {
+	var data = StructTestType{
+		User: User{
+			Name:  "John",
+			Email: "john@example.com",
+			Address: Address{
+				Country: "Ukraine",
+				Town:    "Chernihiv",
+			},
+		},
+		HomePage: url.URL{Scheme: "http", Host: "example.com"},
+	}
+
+	// Marshaling.
+	result, _ := Marshal(data)
+
+	// Tests.
+	if v := Get("USER_NAME"); v != "John" {
+		t.Errorf("Incorrect marshaling (Name): %s\n%v", v, result)
+	}
+
+	if v := Get("USER_EMAIL"); v != "john@example.com" {
+		t.Errorf("Incorrect marshaling (Email): %s\n%v", v, result)
+	}
+
+	if v := Get("USER_ADDRESS_COUNTRY"); v != "Ukraine" {
+		t.Errorf("Incorrect marshaling (Cuontry): %s\n%v", v, result)
+	}
+
+	if v := Get("USER_ADDRESS_TOWN"); v != "Chernihiv" {
+		t.Errorf("Incorrect marshaling (Town): %s\n%v", v, result)
+	}
+
+	if v := Get("HOME_PAGE"); v != "http://example.com" {
+		t.Errorf("Incorrect marshaling url.URL (HomePage):%s", v)
+	}
+}
+
+// TestUnmarshalStruct tests unmarshaling of the Struct.
+func TestUnmarshalStruct(t *testing.T) {
+	var data = StructTestType{User: User{}}
+
+	Set("USER_NAME", "John")
+	Set("USER_EMAIL", "john@example.com")
+	Set("USER_ADDRESS_COUNTRY", "Ukraine")
+	Set("USER_ADDRESS_TOWN", "Chernihiv")
+	Set("HOME_PAGE", "http://example.com")
+
+	// Unmarshaling.
+	err := unmarshalENV(&data, "")
+	if err != nil {
+		t.Error("Incorrect ummarshaling")
+	}
+
+	// Tests.
+	if data.User.Address.Country != "Ukraine" ||
+		data.User.Address.Town != "Chernihiv" {
+		t.Errorf("Incorrect ummarshaling User.Address: %v", data.User.Address)
+	}
+
+	if data.User.Name != "John" || data.User.Email != "john@example.com" {
+		t.Errorf("Incorrect ummarshaling User: %v", data.User)
+	}
+
+	if data.HomePage.String() != "http://example.com" {
+		t.Errorf("Incorrect ummarshaling url.URL: %v", data.HomePage)
 	}
 }

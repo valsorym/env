@@ -30,7 +30,7 @@ type Unmarshaller interface {
 //
 // Supported types: int, int8, int16, int32, int64, uint, uint8, uint16,
 // uint32, uint64, bool, float32, float64, string, and slice from thous types.
-func marshalENV(scope interface{}) ([]string, error) {
+func marshalENV(scope interface{}, prefix string) ([]string, error) {
 	var (
 		rt reflect.Type  // type
 		rv reflect.Value // value
@@ -47,8 +47,8 @@ func marshalENV(scope interface{}) ([]string, error) {
 		rp, rt, rv = rv, rt.Elem(), rv.Elem()
 	} else {
 		rp = reflect.New(reflect.TypeOf(scope))
-		temp := rp.Elem()
-		temp.Set(rv)
+		tmp := rp.Elem()
+		tmp.Set(rv)
 	}
 
 	// Scope validation.
@@ -78,10 +78,9 @@ func marshalENV(scope interface{}) ([]string, error) {
 	for i := 0; i < rv.NumField(); i++ {
 		var key, value, sep string
 		field := rv.Type().Field(i)
-		key, sep = parseTag(field.Tag.Get("env"), field.Name, " ")
-
-		// Set value.
 		instance := rv.FieldByName(field.Name)
+
+		key, sep = parseTag(field.Tag.Get("env"), field.Name, " ")
 		kind := field.Type.Kind()
 		switch kind {
 		case reflect.Int, reflect.Int8, reflect.Int16,
@@ -106,17 +105,44 @@ func marshalENV(scope interface{}) ([]string, error) {
 			if err != nil {
 				return result, err
 			}
-		case reflect.TypeOf(&url.URL{}).Kind():
+		case reflect.Ptr:
 			instance = instance.Elem()
+			if instance.Kind() != reflect.Struct {
+				return result, TypeError
+			}
 			fallthrough
-		case reflect.TypeOf(url.URL{}).Kind():
-			u := instance.Interface().(url.URL)
-			value = u.String()
+		case reflect.Struct:
+			if u, ok := instance.Interface().(url.URL); ok {
+				// Type of url.URL.
+				value = u.String()
+			} else {
+				// Different structure.
+				// /// //// var p string
+				// /// //// //if len(prefix) == 0 && len(key) != 0 {
+				// /// //// //	p = fmt.Sprintf("%s_", key)
+				// /// //// //} else if len(prefix) != 0 && len(key) != 0 {
+				// /// //// //	p = fmt.Sprintf("%s%s_", prefix, key)
+				// /// //// //}
+
+				// Recursive parsing
+				p := fmt.Sprintf("%s%s_", prefix, key)
+				value, err := marshalENV(instance.Interface(), p)
+				if err != nil {
+					return result, err
+				}
+
+				// Expand the result.
+				for _, v := range value {
+					result = append(result, v)
+				}
+				continue // object doesn't save
+			}
 		default:
 			return result, TypeError
 		} // switch
 
 		// Set into environment and add to result list.
+		key = fmt.Sprintf("%s%s", prefix, key)
 		Set(key, value)
 		result = append(result, fmt.Sprintf("%s=%s", key, value))
 	} // for
@@ -129,7 +155,7 @@ func marshalENV(scope interface{}) ([]string, error) {
 //
 // Supported types: int, int8, int16, int32, int64, uint, uint8, uint16,
 // uint32, uint64, bool, float32, float64, string, and slice from thous types.
-func unmarshalENV(scope interface{}) error {
+func unmarshalENV(scope interface{}, prefix string) error {
 	var (
 		rt reflect.Type  // type
 		rv reflect.Value // value
@@ -146,6 +172,11 @@ func unmarshalENV(scope interface{}) error {
 			"in argument to decode", rt, rt)
 	}
 
+	return loadData(rt, rv, rp, prefix)
+}
+
+// loadData sets data inside an object.
+func loadData(rt reflect.Type, rv, rp reflect.Value, prefix string) error {
 	// Scope validation.
 	switch {
 	case rt.Kind() != reflect.Struct:
@@ -170,7 +201,8 @@ func unmarshalENV(scope interface{}) error {
 	// Walk through all the fields of the transferred object.
 	for i := 0; i < rv.NumField(); i++ {
 		field := rv.Type().Field(i)
-		name, sep := parseTag(field.Tag.Get("env"), field.Name, " ")
+		key, sep := parseTag(field.Tag.Get("env"), field.Name, " ")
+		key = fmt.Sprintf("%s%s", prefix, key)
 
 		// Change value.
 		instance := rv.FieldByName(field.Name)
@@ -178,67 +210,88 @@ func unmarshalENV(scope interface{}) error {
 		switch kind {
 		case reflect.Int, reflect.Int8, reflect.Int16,
 			reflect.Int32, reflect.Int64:
-			r, err := strToIntKind(Get(name), kind)
+			r, err := strToIntKind(Get(key), kind)
 			if err != nil {
 				return err
 			}
 			instance.SetInt(r)
 		case reflect.Uint, reflect.Uint8, reflect.Uint16,
 			reflect.Uint32, reflect.Uint64:
-			r, err := strToUintKind(Get(name), kind)
+			r, err := strToUintKind(Get(key), kind)
 			if err != nil {
 				return err
 			}
 			instance.SetUint(r)
 		case reflect.Float32, reflect.Float64:
-			r, err := strToFloatKind(Get(name), kind)
+			r, err := strToFloatKind(Get(key), kind)
 			if err != nil {
 				return err
 			}
 			instance.SetFloat(r)
 		case reflect.Bool:
-			r, err := strToBool(Get(name))
+			r, err := strToBool(Get(key))
 			if err != nil {
 				return err
 			}
 			instance.SetBool(r)
 		case reflect.String:
-			instance.SetString(Get(name))
+			instance.SetString(Get(key))
 		case reflect.Array:
 			max := instance.Type().Len()
-			seq := strings.Split(Get(name), sep)
+			seq := strings.Split(Get(key), sep)
 			if len(seq) > max {
 				return fmt.Errorf("%d items overwhelms the [%d]array",
 					len(seq), max)
 			}
 
-			err := setSequence(&instance, strings.Split(Get(name), sep))
+			err := setSequence(&instance, strings.Split(Get(key), sep))
 			if err != nil {
 				return err
 			}
 		case reflect.Slice:
-			seq := strings.Split(Get(name), sep)
+			seq := strings.Split(Get(key), sep)
 			tmp := reflect.MakeSlice(instance.Type(), len(seq), len(seq))
-			err := setSequence(&tmp, strings.Split(Get(name), sep))
+			err := setSequence(&tmp, strings.Split(Get(key), sep))
 			if err != nil {
 				return err
 			}
 
 			instance.Set(reflect.AppendSlice(instance, tmp))
-		case reflect.TypeOf(&url.URL{}).Kind():
-			u, err := url.Parse(Get(name))
-			if err != nil {
-				return err
+		case reflect.Ptr:
+			// Pointer support (structures only).
+			item := instance.Type().Elem()
+			if item.Kind() != reflect.Struct {
+				return TypeError
 			}
 
-			instance.Set(reflect.ValueOf(u))
-		case reflect.TypeOf(url.URL{}).Kind():
-			u, err := url.Parse(Get(name))
-			if err != nil {
-				return err
+			// Determine the type of structure.
+			elem := reflect.Indirect(reflect.New(item)).Interface()
+			if _, ok := elem.(url.URL); ok {
+				// Parse url.URL.
+				u, err := url.Parse(Get(key))
+				if err != nil {
+					return err
+				}
+				instance.Set(reflect.ValueOf(u))
+			} else {
+				// Another type of structure.
+				unmarshalENV(instance, fmt.Sprintf("%s_", key))
 			}
-
-			instance.Set(reflect.ValueOf(*u))
+		case reflect.Struct:
+			if _, ok := instance.Interface().(url.URL); ok {
+				// Parse url.URL.
+				u, err := url.Parse(Get(key))
+				if err != nil {
+					return err
+				}
+				instance.Set(reflect.ValueOf(*u))
+			} else {
+				// Another type of structure.
+				rp = reflect.New(field.Type)
+				tmp := rp.Elem()
+				tmp.Set(instance)
+				loadData(field.Type, instance, rp, fmt.Sprintf("%s_", key))
+			}
 		default:
 			return TypeError
 		} // switch
@@ -265,19 +318,27 @@ func getSequence(instance *reflect.Value, sep string) (string, error) {
 	}
 
 	switch kind {
-	case reflect.TypeOf(&url.URL{}).Kind():
+	case reflect.Ptr:
 		var tmp = []string{}
 		for i := 0; i < max; i++ {
-			v := instance.Index(i).Elem().Interface().(url.URL)
-			tmp = append(tmp, v.String())
+			item := instance.Index(i).Elem()
+			if v, ok := item.Interface().(url.URL); ok {
+				tmp = append(tmp, v.String())
+			} else {
+				return "", TypeError
+			}
 		}
 		str := strings.Replace(fmt.Sprint(tmp), " ", sep, -1)
 		return strings.Trim(str, "[]"+sep), nil
-	case reflect.TypeOf(url.URL{}).Kind():
+	case reflect.Struct:
 		var tmp = []string{}
 		for i := 0; i < max; i++ {
-			v := instance.Index(i).Interface().(url.URL)
-			tmp = append(tmp, v.String())
+			item := instance.Index(i)
+			if v, ok := item.Interface().(url.URL); ok {
+				tmp = append(tmp, v.String())
+			} else {
+				return "", TypeError
+			}
 		}
 		str := strings.Replace(fmt.Sprint(tmp), " ", sep, -1)
 		return strings.Trim(str, "[]"+sep), nil

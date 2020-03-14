@@ -306,7 +306,7 @@ func Exists(keys ...string) bool {
 //    config.Port         // 80
 //    config.AllowedHosts // []string{"192.168.0.1"}
 func Unmarshal(scope interface{}) error {
-	return unmarshalENV(scope)
+	return unmarshalENV(scope, "")
 }
 
 // Marshal converts the structure in to key/value and put it into environment
@@ -373,5 +373,5 @@ func Unmarshal(scope interface{}) error {
 //    env.Get("PORT")          // "80"
 //    env.Get("ALLOWED_HOSTS") // "192.168.0.1"
 func Marshal(scope interface{}) ([]string, error) {
-	return marshalENV(scope)
+	return marshalENV(scope, "")
 }
