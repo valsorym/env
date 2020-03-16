@@ -9,7 +9,7 @@ import (
 
 type Address struct {
 	Country string `env:"COUNTRY"`
-	Town    string `env:"TOWN"`
+	City    string `env:"CITY"`
 }
 
 // User internal structure for StructTestType type.
@@ -125,6 +125,66 @@ func (c *ExtendedTestType) UnmarshalENV() error {
 	c.Port = 80
 	c.AllowedHosts = []string{"192.168.0.1"}
 	return nil
+}
+
+// UserPtr it's a test structure with structure pointer.
+type UserPtr struct {
+	User
+	Address *Address `env:"ADDRESS"`
+}
+
+// UserPlain it's a test structure with nested structure.
+type UserPlain struct {
+	User
+	Address Address `env:"ADDRESS"`
+}
+
+// Client it's arbitrary test structure.
+type Client struct {
+	Email string `env:"EMAIL"`
+}
+
+// ClientPtr it's test structure with a pointer to a structure that
+// has a pointer to an another structure.
+type ClientPtr struct {
+	Client
+	User     *UserPtr `env:"USER"`
+	HomePage *url.URL `env:"HOME_PAGE"`
+}
+
+// ClientPlain it's test structure with a nested structure that
+// has an another nested structure.
+type ClientPlain struct {
+	Client
+	User     UserPlain `env:"USER"`
+	HomePage url.URL   `env:"HOME_PAGE"`
+}
+
+// TestUnmarshalENVIsNotPointerError tests an exception
+// for a value other than a pointer.
+func TestUnmarshalENVIsNotPointerError(t *testing.T) {
+	var client = ClientPlain{}
+	if err := unmarshalENV(client, ""); err != IsNotPointerError {
+		t.Error("need to raise an exception: IsNotPointerError")
+	}
+}
+
+// TestUnmarshalENVIsNotPointerError tests an exception
+// for an uninitialized value.
+func TestUnmarshalENVIsNotInitializedError(t *testing.T) {
+	var client *ClientPlain
+	if err := unmarshalENV(client, ""); err != IsNotInitializedError {
+		t.Error("need to raise an exception: IsNotInitializedError")
+	}
+}
+
+// TestUnmarshalENVIsNotStructError tests an exception
+// for a value that isn't structure.
+func TestUnmarshalENVIsNotStructError(t *testing.T) {
+	var client = new(int)
+	if err := unmarshalENV(client, ""); err != IsNotStructError {
+		t.Error("need to raise an exception: IsNotStructError")
+	}
 }
 
 // TestUnmarshalENVNumber tests unmarshalENV function
@@ -851,7 +911,7 @@ func TestMarshalStruct(t *testing.T) {
 			Email: "john@example.com",
 			Address: Address{
 				Country: "Ukraine",
-				Town:    "Chernihiv",
+				City:    "Chernihiv",
 			},
 		},
 		HomePage: url.URL{Scheme: "http", Host: "example.com"},
@@ -873,8 +933,8 @@ func TestMarshalStruct(t *testing.T) {
 		t.Errorf("Incorrect marshaling (Cuontry): %s\n%v", v, result)
 	}
 
-	if v := Get("USER_ADDRESS_TOWN"); v != "Chernihiv" {
-		t.Errorf("Incorrect marshaling (Town): %s\n%v", v, result)
+	if v := Get("USER_ADDRESS_CITY"); v != "Chernihiv" {
+		t.Errorf("Incorrect marshaling (City): %s\n%v", v, result)
 	}
 
 	if v := Get("HOME_PAGE"); v != "http://example.com" {
@@ -889,7 +949,7 @@ func TestUnmarshalStruct(t *testing.T) {
 	Set("USER_NAME", "John")
 	Set("USER_EMAIL", "john@example.com")
 	Set("USER_ADDRESS_COUNTRY", "Ukraine")
-	Set("USER_ADDRESS_TOWN", "Chernihiv")
+	Set("USER_ADDRESS_CITY", "Chernihiv")
 	Set("HOME_PAGE", "http://example.com")
 
 	// Unmarshaling.
@@ -900,7 +960,7 @@ func TestUnmarshalStruct(t *testing.T) {
 
 	// Tests.
 	if data.User.Address.Country != "Ukraine" ||
-		data.User.Address.Town != "Chernihiv" {
+		data.User.Address.City != "Chernihiv" {
 		t.Errorf("Incorrect ummarshaling User.Address: %v", data.User.Address)
 	}
 
