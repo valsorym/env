@@ -65,7 +65,7 @@ func (inst *instance) Init(obj interface{}) {
 // Usage:
 //	if inst.Implements((*CustomInterface)(nil)) { ... }
 func (inst *instance) Implements(ifc interface{}) bool {
-	return inst.Type.Implements(reflect.TypeOf(ifc).Elem())
+	return inst.Ptr.Type().Implements(reflect.TypeOf(ifc).Elem())
 }
 
 // isEmpty returns true if string contains separators or comment only.

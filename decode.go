@@ -14,12 +14,16 @@ type Unmarshaler interface {
 	UnmarshalENV() error
 }
 
-// Unmarshal
+// unmarshalENV gets variables from the environment and sets them by
+// pointer into obj. Returns an error if something went wrong.
+//
+// Supported types: int, int8, int16, int32, int64, uint, uint8, uint16,
+// uint32, uint64, bool, float32, float64, string, and slice from thous types.
 func unmarshalENV(obj interface{}, pfx string) error {
 	var inst instance = instance{}
 	inst.Init(obj)
 
-	// The object must be an initialized pointer to the structure.
+	// The object must be an initialized pointer of the struct.
 	switch {
 	case !inst.IsPtr:
 		return IsNotPointerError
@@ -92,7 +96,6 @@ func unmarshalENV(obj interface{}, pfx string) error {
 					len(seq), max,
 				))
 			}
-
 			err := setSequence(&item, strings.Split(Get(key), sep))
 			if err != nil {
 				return err
@@ -148,21 +151,21 @@ func unmarshalENV(obj interface{}, pfx string) error {
 }
 
 // setSequence sets slice into instance.
-func setSequence(instance *reflect.Value, seq []string) (err error) {
-	var kind = instance.Index(0).Kind()
+func setSequence(item *reflect.Value, seq []string) (err error) {
+	var kind = item.Index(0).Kind()
 
 	defer func() {
 		// Catch the panic and return an exception as a value.
 		if r := recover(); r != nil {
-			err = fmt.Errorf("%v", r)
+			err = errors.New(fmt.Sprintf("%v", r))
 		}
 	}()
 
 	// Ignore empty containers.
 	switch {
-	case kind == reflect.Array && instance.Type().Len() == 0:
+	case kind == reflect.Array && item.Type().Len() == 0:
 		fallthrough
-	case kind == reflect.Slice && instance.Len() == 0:
+	case kind == reflect.Slice && item.Len() == 0:
 		return nil
 	}
 
@@ -175,7 +178,7 @@ func setSequence(instance *reflect.Value, seq []string) (err error) {
 			if err != nil {
 				return err
 			}
-			instance.Index(i).SetInt(r)
+			item.Index(i).SetInt(r)
 		}
 	case reflect.Uint, reflect.Uint8, reflect.Uint16,
 		reflect.Uint32, reflect.Uint64:
@@ -184,7 +187,7 @@ func setSequence(instance *reflect.Value, seq []string) (err error) {
 			if err != nil {
 				return err
 			}
-			instance.Index(i).SetUint(r)
+			item.Index(i).SetUint(r)
 		}
 	case reflect.Float32, reflect.Float64:
 		for i, value := range seq {
@@ -192,7 +195,7 @@ func setSequence(instance *reflect.Value, seq []string) (err error) {
 			if err != nil {
 				return err
 			}
-			instance.Index(i).SetFloat(r)
+			item.Index(i).SetFloat(r)
 		}
 	case reflect.Bool:
 		for i, value := range seq {
@@ -200,29 +203,47 @@ func setSequence(instance *reflect.Value, seq []string) (err error) {
 			if err != nil {
 				return err
 			}
-			instance.Index(i).SetBool(r)
+			item.Index(i).SetBool(r)
 		}
 	case reflect.String:
 		for i, value := range seq {
-			instance.Index(i).SetString(value)
+			item.Index(i).SetString(value)
 		}
-	case reflect.TypeOf(&url.URL{}).Kind():
+	case reflect.Ptr:
+		// The *url.URL pointer only.
+		if len(seq) == 0 {
+			break
+		}
+
+		if item.Index(0).Type() != reflect.TypeOf((*url.URL)(nil)) {
+			return TypeError
+		}
+
 		for i, value := range seq {
 			u, err := url.Parse(value)
 			if err != nil {
 				return err
 			}
 
-			instance.Index(i).Set(reflect.ValueOf(u))
+			item.Index(i).Set(reflect.ValueOf(u))
 		}
-	case reflect.TypeOf(url.URL{}).Kind():
+	case reflect.Struct:
+		// The url.URL struct only.
+		if len(seq) == 0 {
+			break
+		}
+
+		if _, ok := item.Index(0).Interface().(url.URL); !ok {
+			return TypeError
+		}
+
 		for i, value := range seq {
 			u, err := url.Parse(value)
 			if err != nil {
 				return err
 			}
 
-			instance.Index(i).Set(reflect.ValueOf(*u))
+			item.Index(i).Set(reflect.ValueOf(*u))
 		}
 	default:
 		return TypeError
