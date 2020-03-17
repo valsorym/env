@@ -7,8 +7,8 @@ import (
 	"strings"
 )
 
-// Marshaler describes an interface for implementing
-// a custom method for marshaling.
+// Marshaler is the interface implemented by types that
+// can marshal themselves into valid object.
 type Marshaler interface {
 	MarshalENV() ([]string, error)
 }
@@ -55,8 +55,16 @@ func marshalENV(obj interface{}, prefix string) ([]string, error) {
 		field := inst.Value.Type().Field(i)
 		item := inst.Value.FieldByName(field.Name)
 
+		// For pointer that isn't a struct convert this pointer to element.
+		if item.Kind() == reflect.Ptr {
+			tmp := item.Elem()
+			if tmp.Kind() != reflect.Struct {
+				item = item.Elem()
+			}
+		}
+
 		key, sep = parseTag(field.Tag.Get("env"), field.Name, " ")
-		kind := field.Type.Kind()
+		kind := item.Kind()
 		switch kind {
 		case reflect.Int, reflect.Int8, reflect.Int16,
 			reflect.Int32, reflect.Int64:
@@ -83,6 +91,7 @@ func marshalENV(obj interface{}, prefix string) ([]string, error) {
 		case reflect.Ptr:
 			item = item.Elem()
 			if item.Kind() != reflect.Struct {
+				fmt.Println("=>", item)
 				return result, TypeError
 			}
 			fallthrough
@@ -142,7 +151,11 @@ func getSequence(item *reflect.Value, sep string) (string, error) {
 			if v, ok := elem.Interface().(url.URL); ok {
 				tmp = append(tmp, v.String())
 			} else {
-				return "", TypeError
+				if elem.Kind() != reflect.Struct {
+					tmp = append(tmp, fmt.Sprintf("%v", elem))
+				} else {
+					return "", TypeError
+				}
 			}
 		}
 		str := strings.Replace(fmt.Sprint(tmp), " ", sep, -1)

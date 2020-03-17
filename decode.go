@@ -8,17 +8,22 @@ import (
 	"strings"
 )
 
-// Unmarshaler describes an interface for implementing
-// a custom method for unmarshaling.
+// Unmarshaler is the interface implemented by types
+// that can unmarshal an environment variables of themselves.
 type Unmarshaler interface {
 	UnmarshalENV() error
 }
 
-// unmarshalENV gets variables from the environment and sets them by
-// pointer into obj. Returns an error if something went wrong.
+// unmarshalENV gets variables from the environment and sets them
+// into object by pointer. Returns an error if something went wrong.
 //
 // Supported types: int, int8, int16, int32, int64, uint, uint8, uint16,
-// uint32, uint64, bool, float32, float64, string, and slice from thous types.
+// uint32, uint64, bool, float32, float64, string, url.URL, *url.URL and
+// slice/array from thous types.
+//
+// Among the supported types are: struct and pointer to struct but
+// slice/array of these types is not supported (except url.URL and
+// *url.URL from the net package).
 func unmarshalENV(obj interface{}, pfx string) error {
 	var inst instance = instance{}
 	inst.Init(obj)
@@ -57,7 +62,8 @@ func unmarshalENV(obj interface{}, pfx string) error {
 		key = fmt.Sprintf("%s%s", pfx, key)
 
 		// Set values of the desired type.
-		kind := field.Type.Kind()
+		// kind := field.Type.Kind()
+		kind := item.Kind()
 		switch kind {
 		case reflect.Int, reflect.Int8, reflect.Int16,
 			reflect.Int32, reflect.Int64:

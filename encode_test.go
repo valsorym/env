@@ -2,6 +2,7 @@ package env
 
 import (
 	"net/url"
+	"strings"
 	"testing"
 )
 
@@ -331,5 +332,167 @@ func TestMarshalStructPtr(t *testing.T) {
 
 	if v := Get("HOME_PAGE"); v != "http://example.com" {
 		t.Errorf("Incorrect marshaling url.URL (HomePage):%s", v)
+	}
+}
+
+// TestMarshalENVNumberPtr tests marshalENV for pointer
+// of Int, Uint and Float types.
+func TestMarshalENVNumberPtr(t *testing.T) {
+	type Struct struct {
+		KeyInt     *int     `env:"KEY_INT"`
+		KeyInt8    *int8    `env:"KEY_INT8"`
+		KeyInt16   *int16   `env:"KEY_INT16"`
+		KeyInt32   *int32   `env:"KEY_INT32"`
+		KeyInt64   *int64   `env:"KEY_INT64"`
+		KeyUint    *uint    `env:"KEY_UINT"`
+		KeyUint8   *uint8   `env:"KEY_UINT8"`
+		KeyUint16  *uint16  `env:"KEY_UINT16"`
+		KeyUint32  *uint32  `env:"KEY_UINT32"`
+		KeyUint64  *uint64  `env:"KEY_UINT64"`
+		KeyFloat32 *float32 `env:"KEY_FLOAT32"`
+		KeyFloat64 *float64 `env:"KEY_FLOAT64"`
+	}
+
+	var (
+		keyInt     int     = 7
+		keyInt8    int8    = 7
+		keyInt16   int16   = 7
+		keyInt32   int32   = 7
+		keyInt64   int64   = 7
+		keyUint    uint    = 7
+		keyUint8   uint8   = 7
+		keyUint16  uint16  = 7
+		keyUint32  uint32  = 7
+		keyUint64  uint64  = 7
+		keyFloat32 float32 = 7.0
+		keyFloat64 float64 = 7.0
+
+		value = Struct{
+			KeyInt:     &keyInt,
+			KeyInt8:    &keyInt8,
+			KeyInt16:   &keyInt16,
+			KeyInt32:   &keyInt32,
+			KeyInt64:   &keyInt64,
+			KeyUint:    &keyUint,
+			KeyUint8:   &keyUint8,
+			KeyUint16:  &keyUint16,
+			KeyUint32:  &keyUint32,
+			KeyUint64:  &keyUint64,
+			KeyFloat32: &keyFloat32,
+			KeyFloat64: &keyFloat64,
+		}
+	)
+
+	// ...
+	Clear()
+	_, err := marshalENV(value, "")
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Tests.
+	keys := []string{"KEY_INT", "KEY_INT8", "KEY_INT16", "KEY_INT32",
+		"KEY_INT64", "KEY_UINT", "KEY_UINT8", "KEY_UINT16",
+		"KEY_UINT32", "KEY_UINT64", "KEY_FLOAT32", "KEY_FLOAT64"}
+
+	for _, key := range keys {
+		tmp := strings.Split(Get(key), ".") // recline fractional part
+		if tmp[0] != "7" {
+			t.Errorf("Incorrect value set for %s: %s", key, tmp[0])
+		}
+	}
+}
+
+// TestMarshalENVBoolPtr tests marshalENV for pointer of bool.
+func TestMarshalENVBoolPtr(t *testing.T) {
+	type Struct struct {
+		KeyBool *bool `env:"KEY_BOOL"`
+	}
+
+	var (
+		keyBool bool = true
+
+		value = Struct{
+			KeyBool: &keyBool,
+		}
+	)
+
+	// ...
+	Clear()
+	_, err := marshalENV(value, "")
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Tests.
+	if v := Get("KEY_BOOL"); v != "true" {
+		t.Errorf("Incorrect value set for KEY_BOOL: %s", v)
+	}
+}
+
+// TestMarshalENVStringPtr tests marshalENV for pointer of bool.
+func TestMarshalENVStringPtr(t *testing.T) {
+	type Struct struct {
+		KeyString *string `env:"KEY_STRING"`
+	}
+
+	var (
+		keyString string = "Hello World"
+
+		value = Struct{
+			KeyString: &keyString,
+		}
+	)
+
+	// ...
+	Clear()
+	_, err := marshalENV(value, "")
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Tests.
+	if v := Get("KEY_STRING"); v != "Hello World" {
+		t.Errorf("Incorrect value set for KEY_STRING: %s", v)
+	}
+}
+
+// TestMarshalENVSlice tests marshalENV function for slice.
+func TestMarshalENVSlice(t *testing.T) {
+	type Slice struct {
+		KeyInt   []*int   `env:"KEY_INT,:"`
+		KeyInt8  []*int8  `env:"KEY_INT8,:"`
+		KeyInt16 []*int16 `env:"KEY_INT16,:"`
+		KeyInt32 []*int32 `env:"KEY_INT32,:"`
+		KeyInt64 []*int64 `env:"KEY_INT64,:"`
+
+		KeyUint   []*uint   `env:"KEY_UINT,:"`
+		KeyUint8  []*uint8  `env:"KEY_UINT8,:"`
+		KeyUint16 []*uint16 `env:"KEY_UINT16,:"`
+		KeyUint32 []*uint32 `env:"KEY_UINT32,:"`
+		KeyUint64 []*uint64 `env:"KEY_UINT64,:"`
+
+		KeyFloat32 []*float32 `env:"KEY_FLOAT32,:"`
+		KeyFloat64 []*float64 `env:"KEY_FLOAT64,:"`
+
+		KeyString []*string `env:"KEY_STRING,:"`
+		KeyBool   []*bool   `env:"KEY_BOOL,:"`
+	}
+
+	var (
+		a, b, c int = 1, 2, 3
+
+		keyInt = []*int{&a, &b, &c}
+		s      = Slice{KeyInt: keyInt}
+	)
+
+	// // Convert slice into string.
+	// toStr := func(v interface{}) string {
+	// 	return strings.Trim(strings.Replace(fmt.Sprint(v), " ", ":", -1), "[]")
+	// }
+
+	_, err := marshalENV(s, "")
+	if err != nil {
+		t.Error(err)
 	}
 }
