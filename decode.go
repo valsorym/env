@@ -60,70 +60,50 @@ func unmarshalENV(obj interface{}, pfx string) error {
 		// Get key and sep for sequences.
 		key, sep := parseTag(field.Tag.Get("env"), field.Name, " ")
 		key = fmt.Sprintf("%s%s", pfx, key)
+		value := Get(key)
 
 		// Set values of the desired type.
-		// kind := field.Type.Kind()
 		kind := item.Kind()
 		switch kind {
-		case reflect.Int, reflect.Int8, reflect.Int16,
-			reflect.Int32, reflect.Int64:
-			r, err := strToIntKind(Get(key), kind)
-			if err != nil {
-				return err
-			}
-			item.SetInt(r)
-		case reflect.Uint, reflect.Uint8, reflect.Uint16,
-			reflect.Uint32, reflect.Uint64:
-			r, err := strToUintKind(Get(key), kind)
-			if err != nil {
-				return err
-			}
-			item.SetUint(r)
-		case reflect.Float32, reflect.Float64:
-			r, err := strToFloatKind(Get(key), kind)
-			if err != nil {
-				return err
-			}
-			item.SetFloat(r)
-		case reflect.Bool:
-			r, err := strToBool(Get(key))
-			if err != nil {
-				return err
-			}
-			item.SetBool(r)
-		case reflect.String:
-			item.SetString(Get(key))
 		case reflect.Array:
 			max := item.Type().Len()
-			seq := strings.Split(Get(key), sep)
+			seq := strings.Split(value, sep)
 			if len(seq) > max {
 				return errors.New(fmt.Sprintf(
 					"%d items overwhelms the [%d]array",
 					len(seq), max,
 				))
 			}
-			err := setSequence(&item, strings.Split(Get(key), sep))
+			err := setSequence(&item, strings.Split(value, sep))
 			if err != nil {
 				return err
 			}
 		case reflect.Slice:
-			seq := strings.Split(Get(key), sep)
+			seq := strings.Split(value, sep)
 			tmp := reflect.MakeSlice(item.Type(), len(seq), len(seq))
-			err := setSequence(&tmp, strings.Split(Get(key), sep))
+			err := setSequence(&tmp, strings.Split(value, sep))
 			if err != nil {
 				return err
 			}
 			item.Set(reflect.AppendSlice(item, tmp))
 		case reflect.Ptr:
-			if item.Type() == reflect.TypeOf((*url.URL)(nil)) {
-				// The *url.URL pointer.
-				u, err := url.Parse(Get(key))
+			switch {
+			case item.Type().Elem().Kind() != reflect.Struct:
+				// If the pointer is not to a structure.
+				tmp := reflect.Indirect(item)
+				err := setValue(tmp, value)
 				if err != nil {
 					return err
 				}
-				item.Set(reflect.ValueOf(u))
-			} else {
-				// Another type of pointer's struct.
+			case item.Type() == reflect.TypeOf((*url.URL)(nil)):
+				// If a pointer to a structure of the url.URL.
+				err := setValue(item, value)
+				if err != nil {
+					return err
+				}
+			default:
+				// If a pointer to a structure of the another's types.
+				// P.s. Not a *url.URL.
 				tmp := reflect.New(item.Type().Elem()).Interface()
 				err := unmarshalENV(tmp, fmt.Sprintf("%s_", key))
 				if err != nil {
@@ -132,15 +112,13 @@ func unmarshalENV(obj interface{}, pfx string) error {
 				item.Set(reflect.ValueOf(tmp))
 			}
 		case reflect.Struct:
-			if _, ok := item.Interface().(url.URL); ok {
-				// Parse url.URL.
-				u, err := url.Parse(Get(key))
-				if err != nil {
-					return err
-				}
-				item.Set(reflect.ValueOf(*u))
-			} else {
-				// Another type of struct.
+			switch {
+			case item.Type() == reflect.TypeOf(url.URL{}):
+				// If a url.URL structure.
+				setValue(item, value)
+			default:
+				// If a structure of the another's types.
+				// P.s. Not a url.URL.
 				tmp := reflect.New(item.Type()).Interface()
 				err := unmarshalENV(tmp, fmt.Sprintf("%s_", key))
 				if err != nil {
@@ -149,14 +127,18 @@ func unmarshalENV(obj interface{}, pfx string) error {
 				item.Set(reflect.ValueOf(tmp).Elem())
 			}
 		default:
-			return TypeError
+			// Try to set correct value.
+			err := setValue(item, value)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
 	return nil
 }
 
-// setSequence sets slice into instance.
+// setSequence sets slice into item.
 func setSequence(item *reflect.Value, seq []string) (err error) {
 	var kind = item.Index(0).Kind()
 
@@ -172,84 +154,78 @@ func setSequence(item *reflect.Value, seq []string) (err error) {
 	case kind == reflect.Array && item.Type().Len() == 0:
 		fallthrough
 	case kind == reflect.Slice && item.Len() == 0:
+		fallthrough
+	case len(seq) == 0:
 		return nil
 	}
 
-	// Convert to correct type slice.
+	// Set values from sequence.
+	for i, value := range seq {
+		elem := item.Index(i)
+		err := setValue(elem, value)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// setValue sets value.
+func setValue(item reflect.Value, value string) error {
+	kind := item.Kind()
 	switch kind {
 	case reflect.Int, reflect.Int8, reflect.Int16,
 		reflect.Int32, reflect.Int64:
-		for i, value := range seq {
-			r, err := strToIntKind(value, kind)
-			if err != nil {
-				return err
-			}
-			item.Index(i).SetInt(r)
+		r, err := strToIntKind(value, kind)
+		if err != nil {
+			return err
 		}
+		item.SetInt(r)
 	case reflect.Uint, reflect.Uint8, reflect.Uint16,
 		reflect.Uint32, reflect.Uint64:
-		for i, value := range seq {
-			r, err := strToUintKind(value, kind)
-			if err != nil {
-				return err
-			}
-			item.Index(i).SetUint(r)
+		r, err := strToUintKind(value, kind)
+		if err != nil {
+			return err
 		}
+		item.SetUint(r)
 	case reflect.Float32, reflect.Float64:
-		for i, value := range seq {
-			r, err := strToFloatKind(value, kind)
-			if err != nil {
-				return err
-			}
-			item.Index(i).SetFloat(r)
+		r, err := strToFloatKind(value, kind)
+		if err != nil {
+			return err
 		}
+		item.SetFloat(r)
 	case reflect.Bool:
-		for i, value := range seq {
-			r, err := strToBool(value)
-			if err != nil {
-				return err
-			}
-			item.Index(i).SetBool(r)
+		r, err := strToBool(value)
+		if err != nil {
+			return err
 		}
+		item.SetBool(r)
 	case reflect.String:
-		for i, value := range seq {
-			item.Index(i).SetString(value)
-		}
+		item.SetString(value)
 	case reflect.Ptr:
 		// The *url.URL pointer only.
-		if len(seq) == 0 {
-			break
-		}
-
-		if item.Index(0).Type() != reflect.TypeOf((*url.URL)(nil)) {
-			return TypeError
-		}
-
-		for i, value := range seq {
+		switch {
+		case item.Type() == reflect.TypeOf((*url.URL)(nil)):
 			u, err := url.Parse(value)
 			if err != nil {
 				return err
 			}
-
-			item.Index(i).Set(reflect.ValueOf(u))
+			item.Set(reflect.ValueOf(u))
+		default:
+			return TypeError
 		}
 	case reflect.Struct:
 		// The url.URL struct only.
-		if len(seq) == 0 {
-			break
-		}
-
-		if _, ok := item.Index(0).Interface().(url.URL); !ok {
-			return TypeError
-		}
-
-		for i, value := range seq {
+		switch {
+		case item.Type() == reflect.TypeOf(url.URL{}):
 			u, err := url.Parse(value)
 			if err != nil {
 				return err
 			}
-
-			item.Index(i).Set(reflect.ValueOf(*u))
+			item.Set(reflect.ValueOf(*u))
+		default:
+			return TypeError
 		}
 	default:
 		return TypeError

@@ -784,3 +784,27 @@ func TestUnmarshalENVCustom(t *testing.T) {
 		t.Errorf("Incorrect value set for ALLOWED_HOSTS: %v", value)
 	}
 }
+
+// TestUnmarshalENVStringPtr tests unmarshalENV function
+// for pointer on the string type.
+func TestUnmarshalENVStringPtr(t *testing.T) {
+	type String struct {
+		KeyString *string `env:"KEY_STRING"`
+	}
+	var (
+		keyString string = ""
+
+		d = String{KeyString: &keyString}
+	)
+
+	Set("KEY_STRING", "Hello World")
+	err := unmarshalENV(&d, "")
+	if err != nil {
+		t.Error(err)
+	}
+
+	if *d.KeyString != "Hello World" {
+		t.Errorf("Incorrect value set for KEY_STRING: %v", *d.KeyString)
+	}
+
+}
