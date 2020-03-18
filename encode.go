@@ -17,7 +17,7 @@ type Marshaler interface {
 //
 // Supported types: int, int8, int16, int32, int64, uint, uint8, uint16,
 // uint32, uint64, bool, float32, float64, string, and slice from thous types.
-func marshalENV(obj interface{}, prefix string) ([]string, error) {
+func marshalENV(obj interface{}, pfx string) ([]string, error) {
 	var (
 		err    error
 		result []string
@@ -55,70 +55,43 @@ func marshalENV(obj interface{}, prefix string) ([]string, error) {
 		field := inst.Value.Type().Field(i)
 		item := inst.Value.FieldByName(field.Name)
 
-		// For pointer that isn't a struct convert this pointer to element.
+		// Convert pointer to element.
 		if item.Kind() == reflect.Ptr {
-			tmp := item.Elem()
-			if tmp.Kind() != reflect.Struct {
-				item = item.Elem()
-			}
+			item = item.Elem()
 		}
 
 		key, sep = parseTag(field.Tag.Get("env"), field.Name, " ")
-		kind := item.Kind()
-		switch kind {
-		case reflect.Int, reflect.Int8, reflect.Int16,
-			reflect.Int32, reflect.Int64:
-			value = fmt.Sprintf("%d", item.Int())
-		case reflect.Uint, reflect.Uint8, reflect.Uint16,
-			reflect.Uint32, reflect.Uint64:
-			value = fmt.Sprintf("%d", item.Uint())
-		case reflect.Float32, reflect.Float64:
-			value = fmt.Sprintf("%f", item.Float())
-		case reflect.Bool:
-			value = fmt.Sprintf("%t", item.Bool())
-		case reflect.String:
-			value = fmt.Sprintf("%s", item.String())
-		case reflect.Array:
+		switch item.Kind() {
+		case reflect.Array, reflect.Slice:
 			value, err = getSequence(&item, sep)
 			if err != nil {
 				return result, err
 			}
-		case reflect.Slice:
-			value, err = getSequence(&item, sep)
-			if err != nil {
-				return result, err
-			}
-		case reflect.Ptr:
-			item = item.Elem()
-			if item.Kind() != reflect.Struct {
-				fmt.Println("=>", item)
-				return result, TypeError
-			}
-			fallthrough
 		case reflect.Struct:
+			// Support for url.URL struct only.
 			if u, ok := item.Interface().(url.URL); ok {
-				// Type of url.URL.
 				value = u.String()
-			} else {
-				// Recursive parsing
-				p := fmt.Sprintf("%s%s_", prefix, key)
-				value, err := marshalENV(item.Interface(), p)
-				if err != nil {
-					return result, err
-				}
-
-				// Expand the result.
-				for _, v := range value {
-					result = append(result, v)
-				}
-				continue // object doesn't save
+				break // break switch
 			}
+
+			// Another struct.
+			p := fmt.Sprintf("%s%s_", pfx, key)
+			value, err := marshalENV(item.Interface(), p)
+			if err != nil {
+				return result, err
+			}
+
+			result = append(result, value...)
+			continue // value of the recursive field is not to saved
 		default:
-			return result, TypeError
+			value, err = toStr(item)
+			if err != nil {
+				return result, err
+			}
 		} // switch
 
 		// Set into environment and add to result list.
-		key = fmt.Sprintf("%s%s", prefix, key)
+		key = fmt.Sprintf("%s%s", pfx, key)
 		Set(key, value)
 		result = append(result, fmt.Sprintf("%s=%s", key, value))
 	} // for
@@ -128,9 +101,13 @@ func marshalENV(obj interface{}, prefix string) ([]string, error) {
 
 // getSequence get sequence as string.
 func getSequence(item *reflect.Value, sep string) (string, error) {
-	var kind reflect.Kind
-	var max int
+	var (
+		result string
+		kind   reflect.Kind
+		max    int
+	)
 
+	// Type checking and instance adjustment.
 	switch item.Kind() {
 	case reflect.Array:
 		kind = item.Index(0).Kind()
@@ -143,37 +120,59 @@ func getSequence(item *reflect.Value, sep string) (string, error) {
 		return "", TypeError
 	}
 
-	switch kind {
-	case reflect.Ptr:
-		var tmp = []string{}
-		for i := 0; i < max; i++ {
-			elem := item.Index(i).Elem()
-			if v, ok := elem.Interface().(url.URL); ok {
-				tmp = append(tmp, v.String())
-			} else {
-				if elem.Kind() != reflect.Struct {
-					tmp = append(tmp, fmt.Sprintf("%v", elem))
-				} else {
-					return "", TypeError
-				}
-			}
-		}
-		str := strings.Replace(fmt.Sprint(tmp), " ", sep, -1)
-		return strings.Trim(str, "[]"+sep), nil
-	case reflect.Struct:
-		var tmp = []string{}
-		for i := 0; i < max; i++ {
-			elem := item.Index(i)
-			if v, ok := elem.Interface().(url.URL); ok {
-				tmp = append(tmp, v.String())
-			} else {
-				return "", TypeError
-			}
-		}
-		str := strings.Replace(fmt.Sprint(tmp), " ", sep, -1)
-		return strings.Trim(str, "[]"+sep), nil
-	}
-	str := strings.Replace(fmt.Sprint(*item), " ", sep, -1)
-	return strings.Trim(str, "[]"+sep), nil
+	// Item list string display.
+	result = strings.Replace(fmt.Sprint(*item), " ", sep, -1)
 
+	// For pointers and structures.
+	if kind == reflect.Ptr || kind == reflect.Struct {
+		var tmp = []string{}
+		for i := 0; i < max; i++ {
+			var elem = item.Index(i)
+			if kind == reflect.Ptr {
+				elem = item.Index(i).Elem()
+			}
+
+			v, err := toStr(elem)
+			if err != nil {
+				return "", err
+			}
+
+			tmp = append(tmp, v)
+		}
+		result = strings.Replace(fmt.Sprint(tmp), " ", sep, -1)
+	}
+
+	return strings.Trim(result, "[]"+sep), nil
+}
+
+// toStr converts item to string.
+func toStr(item reflect.Value) (string, error) {
+	var value string
+
+	kind := item.Kind()
+	switch kind {
+	case reflect.Int, reflect.Int8, reflect.Int16,
+		reflect.Int32, reflect.Int64:
+		value = fmt.Sprintf("%d", item.Int())
+	case reflect.Uint, reflect.Uint8, reflect.Uint16,
+		reflect.Uint32, reflect.Uint64:
+		value = fmt.Sprintf("%d", item.Uint())
+	case reflect.Float32, reflect.Float64:
+		value = fmt.Sprintf("%f", item.Float())
+	case reflect.Bool:
+		value = fmt.Sprintf("%t", item.Bool())
+	case reflect.String:
+		value = fmt.Sprintf("%s", item.String())
+	case reflect.Struct:
+		// Support for url.URL struct only.
+		if u, ok := item.Interface().(url.URL); ok {
+			value = u.String()
+			break
+		}
+		fallthrough
+	default:
+		return "", TypeError
+	}
+
+	return value, nil
 }
