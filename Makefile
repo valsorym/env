@@ -46,5 +46,5 @@ test:
 test-cover:
 	@go test -cover github.com/goloop/env && \
 		go test -coverprofile=/tmp/coverage.out github.com/goloop/env && \
-		go tool cover -func=coverage.out && \
-		go tool cover -html=coverage.out
+		go tool cover -func=/tmp/coverage.out && \
+		go tool cover -html=/tmp/coverage.out
