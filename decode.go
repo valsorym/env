@@ -8,8 +8,8 @@ import (
 	"strings"
 )
 
-// Unmarshaler is the interface implemented by types
-// that can unmarshal an environment variables of themselves.
+// Unmarshaler is the interface implemented by types that can unmarshal
+// an environment variables of themselves.
 type Unmarshaler interface {
 	UnmarshalENV() error
 }
@@ -17,9 +17,13 @@ type Unmarshaler interface {
 // unmarshalENV gets variables from the environment and sets them
 // into object by pointer. Returns an error if something went wrong.
 //
-// Supported types: int, int8, int16, int32, int64, uint, uint8, uint16,
-// uint32, uint64, bool, float32, float64, string, url.URL, *url.URL and
-// slice/array from thous types.
+// unmarshalENV method supports the following field's types: int, int8, int16,
+// int32, int64, uin, uint8, uin16, uint32, in64, float32, float64, string,
+// bool, url.URL and pointers, array or slice from thous types (i.e. *int, ...,
+// []int, ..., []bool, ..., [2]*url.URL, etc.). The nested structures will be
+// processed recursively.
+//
+// For other filed's types (like chan, map ...) will be returned an error.
 //
 // Among the supported types are: struct and pointer to struct but
 // slice/array of these types is not supported (except url.URL and

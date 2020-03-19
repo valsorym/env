@@ -83,6 +83,7 @@ func removeInlineComment(str, quote string) string {
 
 // parseExpression breaks expression into key and value, ignore
 // comments and any spaces.
+//
 // Note: value must be an expression.
 func parseExpression(exp string) (key, value string, err error) {
 	var (
@@ -137,7 +138,7 @@ func parseExpression(exp string) (key, value string, err error) {
 	return
 }
 
-// parseTag returns tag parameters as [NAME[, SEP]] where
+// parseTag returns tag parameters as [NAME[, SEP]] where:
 //     NAME variable name in the environment;
 //     SEP  separator for the list (only for arrays and slices).
 func parseTag(value, defaultName, defaultSep string) (name, sep string) {

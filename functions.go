@@ -32,8 +32,8 @@ import "os"
 //        }
 //    }
 //
-//    // Printed only:
-//    //  KEY_0=VALUE_X
+//    // Environment:
+//    // KEY_0=VALUE_X
 //    echo()
 //
 //    // Load values without replacement.
@@ -42,11 +42,11 @@ import "os"
 //        // something went wrong
 //    }
 //
-//    // Printed all variables:
-//    //  KEY_0=VALUE_X    // not replaced by VALUE_001;
-//    //  KEY_1=VALUE_001  // add new value;
-//    //  KEY_2=VALUE_002  // add new value and replaced ${LAST_ID}
-//                         // to the plain text.
+//    // Environment:
+//    // KEY_0=VALUE_X    // not replaced by VALUE_001;
+//    // KEY_1=VALUE_001  // add new value;
+//    // KEY_2=VALUE_002  // add new value and replaced ${LAST_ID}
+//                        // to the plain text.
 //    echo()
 func Load(filename string) error {
 	var expand, update, forced = true, false, false
@@ -82,8 +82,8 @@ func Load(filename string) error {
 //        }
 //    }
 //
-//    // Printed only:
-//    //  KEY_0=VALUE_X
+//    // Environment:
+//    // KEY_0=VALUE_X
 //    echo()
 //
 //    // Load values without replacement.
@@ -92,10 +92,10 @@ func Load(filename string) error {
 //        // something went wrong
 //    }
 //
-//    // Printed all variables:
-//    //  KEY_0=VALUE_X            // not replaced by VALUE_001;
-//    //  KEY_1=VALUE_001         // add new value;
-//    //  KEY_2=VALUE_${LAST_ID}  // add new value without replecing $var.
+//    // Environment:
+//    // KEY_0=VALUE_X           // not replaced by VALUE_001;
+//    // KEY_1=VALUE_001         // add new value;
+//    // KEY_2=VALUE_${LAST_ID}  // add new value without replecing $var.
 //    echo()
 func LoadSafe(filename string) error {
 	var expand, update, forced = false, false, false
@@ -132,8 +132,8 @@ func LoadSafe(filename string) error {
 //        }
 //    }
 //
-//    // Printed only:
-//    //  KEY_0=VALUE_X
+//    // Environment:
+//    // KEY_0=VALUE_X
 //    echo()
 //
 //    // Load values with replacement.
@@ -142,11 +142,11 @@ func LoadSafe(filename string) error {
 //        // something went wrong
 //    }
 //
-//    // Printed all variables:
-//    //  KEY_0=VALUE_000  // data has been updated;
-//    //  KEY_1=VALUE_001  // add new value;
-//    //  KEY_2=VALUE_002  // add new value and replaced ${LAST_ID}
-//                         // to the plain text.
+//    // Environment:
+//    // KEY_0=VALUE_000  // data has been updated;
+//    // KEY_1=VALUE_001  // add new value;
+//    // KEY_2=VALUE_002  // add new value and replaced ${LAST_ID}
+//                        // to the plain text.
 //    echo()
 func Update(filename string) error {
 	var expand, update, forced = true, true, false
@@ -182,8 +182,8 @@ func Update(filename string) error {
 //        }
 //    }
 //
-//    // Printed only:
-//    //  KEY_0=VALUE_X
+//    // Environment:
+//    // KEY_0=VALUE_X
 //    echo()
 //
 //    // Load values with replacement.
@@ -192,10 +192,10 @@ func Update(filename string) error {
 //        // something went wrong
 //    }
 //
-//    // Printed all variables:
-//    //  KEY_0=VALUE_000         // data has been updated;
-//    //  KEY_1=VALUE_001         // add new value;
-//    //  KEY_2=VALUE_${LAST_ID}  // add new value without replecing $var.
+//    // Environment:
+//    // KEY_0=VALUE_000         // data has been updated;
+//    // KEY_1=VALUE_001         // add new value;
+//    // KEY_2=VALUE_${LAST_ID}  // add new value without replecing $var.
 //    echo()
 func UpdateSafe(filename string) error {
 	var expand, update, forced = false, true, false
@@ -244,15 +244,18 @@ func Exists(keys ...string) bool {
 // pointed to by scope. If scope isn't struct, not a pointer or is nil -
 // returns an error.
 //
-// Supports the following field types: int, int8, int16, int32, int64, uin,
-// uint8, uin16, uint32, uin64, float32, float64, string, bool, url.URL,
-// *url.URL and array or slice from thous types. For other filed's types
-// will be returned an error.
+// Unmarshal method supports the following field's types: int, int8, int16,
+// int32, int64, uin, uint8, uin16, uint32, in64, float32, float64, string,
+// bool, url.URL and pointers, array or slice from thous types (i.e. *int, ...,
+// []int, ..., []bool, ..., [2]*url.URL, etc.). The nested structures will be
+// processed recursively.
+//
+// For other filed's types (like chan, map ...) will be returned an error.
 //
 // If the structure implements Unmarshaller interface - the custom UnmarshalENV
 // method will be called.
 //
-// Structure fields may have a `env` tag as `env:"KEY[,SEP]"` where:
+// Structure fields may have a env tag as `env:"KEY[,SEP]"` where:
 //
 //    KEY - matches the name of the key in the environment;
 //    SEP - optional argument, sets the separator for lists (default: space).
@@ -313,15 +316,18 @@ func Unmarshal(scope interface{}) error {
 // with update old values. The first return value returns a map of the data
 // that was correct set into environment. The seconden - error or nil.
 //
-// Supports the following field types: int, int8, int16, int32, int64, uin,
-// uint8, uin16, uint32, uin64, float32, float64, string, bool, url.URL,
-// *url.URL and array or slice from thous types. For other filed's types
-// will be returned an error.
+// Marshal method supports the following field's types: int, int8, int16,
+// int32, int64, uin, uint8, uin16, uint32, in64, float32, float64, string,
+// bool, url.URL and pointers, array or slice from thous types (i.e. *int, ...,
+// []int, ..., []bool, ..., [2]*url.URL, etc.). The nested structures will be
+// processed recursively.
+//
+// For other filed's types (like chan, map, ...) will be returned an error.
 //
 // If the structure implements Marshaller interface - the custom MarshalENV
 // method - will be called.
 //
-// Structure fields may have a `env` tag as `env:"KEY[,SEP]"` where:
+// Structure fields may have a env tag as `env:"KEY[,SEP]"` where:
 //
 //    KEY - matches the name of the key in the environment;
 //    SEP - optional argument, sets the separator for lists (default: space).

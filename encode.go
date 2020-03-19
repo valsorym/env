@@ -7,16 +7,21 @@ import (
 	"strings"
 )
 
-// Marshaler is the interface implemented by types that
-// can marshal themselves into valid object.
+// Marshaler is the interface implemented by types that can marshal
+// themselves into valid object.
 type Marshaler interface {
 	MarshalENV() ([]string, error)
 }
 
 // marshalENV saves obj into environment data.
 //
-// Supported types: int, int8, int16, int32, int64, uint, uint8, uint16,
-// uint32, uint64, bool, float32, float64, string, and slice from thous types.
+// marshalENV method supports the following field's types: int, int8, int16,
+// int32, int64, uin, uint8, uin16, uint32, in64, float32, float64, string,
+// bool, url.URL and pointers, array or slice from thous types (i.e. *int, ...,
+// []int, ..., []bool, ..., [2]*url.URL, etc.). The nested structures will be
+// processed recursively.
+//
+// For other filed's types (like chan, map ...) will be returned an error.
 func marshalENV(obj interface{}, pfx string) ([]string, error) {
 	var (
 		err    error

@@ -1,34 +1,33 @@
 # env
 
-The `env` it's simple lib for manage environment's variables, parse and convert it into Go-structures.
+Package `env` it's simple lib for manage [environment's variables](https://en.wikipedia.org/wiki/Environment_variable), parse and convert it into Go-structures.
 
-*P.s. Environment variables are a universal mechanism for conveying configuration information to Unix programs. They are part of the environment in which a process runs.*
+The `env` package allows to control environment's variables: 
 
-The env package allows to control environment's variables: 
-
-* set new variables;
-* delete variables;
-* get value by key;
-* load data from the env-file into environment;
-* store environment values into Go- structure.
+* set, read and delete variables;
+* load or update environment's variables from env-file;
+* to unmarshal environment variables into Go-structure;
+* to marshal Go-structure's fields into environment.
 
 ## Quick example
 
-Let's imagine the task. There is a web-project that is develop and tests on the local computer and runs on the production server. On the production server some settings (for example host and port) enforced seated in an environment but on the local computer data must be loaded from the file.
+Let’s imagine the task. There is a web-project that is develop and tests on the local computer and deploys on the production server. On the production server some settings (for example `host` and `port`) enforced seated in an environment but on the local computer data must be loaded from the file (because different team members have different launch options).
 
-The configuration file `config.env` with env-variables look likes:
+For example, the local-configuration file `.env` with variables look likes:
 
 ```
 HOST=0.0.0.0
 PORT=8080
 ALLOWED_HOSTS="localhost:127.0.0.1"
 
-# In configurations and in the environment there may be
-# a many of variables that willn't be parsed.
+# In configurations file and/or in the environment there can be
+# a many of variables that willn't be parsed, like this:
 SECRET_KEY="N0XRABLZ5ZZY6dCNgD7pLjTIlx8v4G5d"
 ```
 
-Make test project `main.go`. We need to load the missing configurations from the file into the environment. Convert data from the environment into Go-structure. Use this data to start the server.
+So, make test project like `main.go`. We need to load the missing configurations from the file into the environment. Convert data from the environment into Go-structure. And to use this data to start the server.
+
+**Note:** We need to load the missing variables but not update the existing ones.
 
 ```
 package main
@@ -51,31 +50,31 @@ type Config struct {
 	// that are available in the environment.
 }
 
-// Addr returns the server's address.
+// Addr returns the server's address - concatenate host
+// and port into one string.
 func (c *Config) Addr() string {
 	return fmt.Sprintf("%s:%d", c.Host, c.Port)
 }
 
-// Home it's example of the homepage handler.
+// Home it is handler of the home page.
 func Home(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Hello World!")
 }
 
 func main() {
-	// Create a pointer to the configuration object.
-	var config = &Config{}
+	var config = Config{}
 
-	// Load configurations in an environment, loads from the env-file.
-	// P.s. We use the Load (not Update) method for as not to overwrite
+	// Load configurations from the env-file into an environment.
+	// P.s. We use the Load (but not Update) method for as not to overwrite
 	// the data in the environment because on the production server this
 	// data can be set forcibly.
-	env.Load("./config.env")
+	env.Load(".env") // set correct the path to the file with variables
 
-	// Parses the environment data and stores the result in the value
-	// pointed to by config.
-	env.Unmarshal(config)
+	// Parsing of the environment data and storing the result
+	// into object by pointer.
+	env.Unmarshal(&config)
 
-	// Routing.
+	// Make routing.
 	http.HandleFunc("/", Home)
 
 	// Run.
@@ -87,10 +86,79 @@ func main() {
 
 ## Types
 
-Parser supports the following field types: `int`, `int8`, `int16`, `int32`,
-`int64`, `uin`, `uint8`, `uin16`, `uint32`, `uin64`, `float32`, `float64`,
-`string`, `bool`, `url.URL`, `*url.URL` and `array` or `slice` from thous types
-*(i.e. `[]int`, `[]int8`, ..., `[]bool`)*. For other filed's types will be returned an error - **`env.TypeError`**.
+Marshal/Unmarshal methods  supports the following field's types: `int`, `int8`, `int16`, `int32`, `int64`, `uin`, `uint8`, `uin16`, `uint32`, `uin64`, `float32`, `float64`, `string`, `bool`, `url.URL` and `pointers`, `array` or `slice` from thous types *(i.e. `*int`, ..., `[]int`, ..., `[]bool`, ..., `[2]*url.URL`, etc.)*. The nested structures will be processed recursively.
+
+For other filed's types (like `chan` or `map` ...) will be returned an error.
+
+Example:
+
+```
+package main
+
+import (
+	"log"
+	"net/url"
+
+	"github.com/goloop/env"
+)
+
+type Address struct {
+	City string `env:"CITY"`
+}
+
+type User struct {
+	Name        string   `env:"NAME"`
+	Address     *Address `env:"ADDRESS"`       // can be as pointer
+	Permissions []bool   `env:"PERMISSIONS,;"` // separator like `;`
+}
+
+type Client struct {
+	ID       int      // default env-variable name
+	Email    string   `env:"EMAIL"`
+	HomePage *url.URL `env:"HOME_PAGE"` // can be as pointer
+	User     User     `env:"USER"`      // ... or like value
+}
+
+func main() {
+	var clientA, clientB Client
+	clientA = Client{
+		ID:       3,
+		Email:    "mail@example.com",
+		HomePage: &url.URL{Scheme: "http", Host: "example.com"},
+		User: User{
+			Name:        "valsorym",
+			Address:     &Address{City: "Chernihiv"},
+			Permissions: []bool{true, true, true, false, false},
+		},
+	}
+
+	// Save data of the clientA.
+	if _, err := env.Marshal(clientA); err != nil {
+		log.Fatal(err)
+	}
+
+	// Load data into clientB.
+	if err := env.Unmarshal(&clientB); err != nil { // need to use pointer
+		log.Fatal(err)
+	}
+
+	// Obect clientB:
+	// clientB.ID                // 3
+	// clientB.Email             // mail@example.com
+	// clientB.HomePage.String() // http://example.com
+	// clientB.User.Name         // valsorym
+	// clientB.User.Address.City // Chernihiv
+	// clientB.User.Permissions  // [true true true false false]
+
+	// Envirenment:
+	// ID=3
+	// EMAIL=mail@example.com
+	// HOME_PAGE=http://example.com
+	// USER_NAME=valsorym
+	// USER_ADDRESS_CITY=Chernihiv
+	// USER_PERMISSIONS=true;true;true;false;false
+}
+```
 
 # Get lib
 
@@ -122,9 +190,7 @@ import (
 
 ## Load
 
-The `Load` to loads data from env-file into environment without replacing
-existing values. During loading replaces `${var}` or `$var` in the string
-based on the data in the environment.
+The `Load` to loads data from env-file into environment without replacing existing values. During loading replaces `${var}` or `$var` in the string based on the data in the environment.
 
 Returns an error in case of failure.
 
@@ -148,18 +214,8 @@ KEY_2=VALUE_${LAST_ID}
 Make code to loads custom values into environment:
 
 ```
-// The method prints environment variables starting with 'KEY_'.
-echo := func() {
-    for _, item := range env.Environ() {
-        if strings.HasPrefix(item, "KEY_") {
-            fmt.Println(item)
-        }
-    }
-}
-
-// Printed only:
-//  KEY_0=VALUE_X
-echo()
+// Environment:
+// KEY_0=VALUE_X
 
 // Load values without replacement.
 err := env.Load(".env")
@@ -167,17 +223,15 @@ if err != nil {
     // something went wrong
 }
 
-// Printed all variables:
-//  KEY_0=VALUE_X    // not replaced by VALUE_001;
-//  KEY_1=VALUE_001  // add new value;
-//  KEY_2=VALUE_002  // add new value and replaced ${LAST_ID}
-                     // to the plain text.
-echo()
+// Environment:
+// KEY_0=VALUE_X    // not replaced by VALUE_001;
+// KEY_1=VALUE_001  // add new value;
+// KEY_2=VALUE_002  // add new value and replaced ${LAST_ID}
+                    // to the plain text.
 ```
 ## LoadSafe
 
-The `LoadSafe` to loads data from env-file into environment without replacing
-existing values. Ignores the replacing of a `${var}` or `$var` in a string.
+The `LoadSafe` to loads data from env-file into environment without replacing existing values. Ignores the replacing of a `${var}` or `$var` in a string.
 
 Returns an error in case of failure.
 
@@ -201,18 +255,8 @@ KEY_2=VALUE_${LAST_ID}
 Make code to loads custom values into environment:
 
 ```
-// The method prints environment variables starting with 'KEY_'.
-echo := func() {
-    for _, item := range env.Environ() {
-        if strings.HasPrefix(item, "KEY_") {
-            fmt.Println(item)
-        }
-    }
-}
-
-// Printed only:
-//  KEY_0=VALUE_X
-echo()
+// Environment:
+// KEY_0=VALUE_X
 
 // Load values without replacement.
 err := env.LoadSafe(".env")
@@ -220,17 +264,14 @@ if err != nil {
     // something went wrong
 }
 
-// Printed all variables:
-//  KEY_0=VALUE_X           // not replaced by VALUE_001;
-//  KEY_1=VALUE_001         // add new value;
-//  KEY_2=VALUE_${LAST_ID}  // add new value without replecing $var.
-echo()
+// Environment:
+// KEY_0=VALUE_X           // not replaced by VALUE_001;
+// KEY_1=VALUE_001         // add new value;
+// KEY_2=VALUE_${LAST_ID}  // add new value without replecing $var.
 ```
 ## Update
 
-The `Update` to loads data from env-file into environment with replacing
-existing values. During loading replaces `${var}` or `$var` in the string
-based on the data in the environment.
+The `Update` to loads data from env-file into environment with replacing existing values. During loading replaces `${var}` or `$var` in the string based on the data in the environment.
 
 Returns an error in case of failure.
 
@@ -254,18 +295,8 @@ KEY_2=VALUE_${LAST_ID}
 Make code to loads custom values into environment:
 
 ```
-// The method prints environment variables starting with 'KEY_'.
-echo := func() {
-    for _, item := range env.Environ() {
-        if strings.HasPrefix(item, "KEY_") {
-            fmt.Println(item)
-        }
-    }
-}
-
-// Printed only:
-//  KEY_0=VALUE_X
-echo()
+// Environment:
+// KEY_0=VALUE_X
 
 // Load values with replacement.
 err := env.Update(".env")
@@ -273,18 +304,16 @@ if err != nil {
     // something went wrong
 }
 
-// Printed all variables:
-//  KEY_0=VALUE_000  // data has been updated;
-//  KEY_1=VALUE_001  // add new value;
-//  KEY_2=VALUE_002  // add new value and replaced ${LAST_ID}
-                     // to the plain text.
-echo()
+// Environment:
+// KEY_0=VALUE_000  // data has been updated;
+// KEY_1=VALUE_001  // add new value;
+// KEY_2=VALUE_002  // add new value and replaced ${LAST_ID}
+                    // to the plain text.
 ```
 
 ## UpdateSafe
 
-The `UpdateSafe` to loads data from env-file into environment with replacing
-existing values. Ignores the replecing of a `${var}` or `$var` in a string.
+The `UpdateSafe` to loads data from env-file into environment with replacing existing values. Ignores the replecing of a `${var}` or `$var` in a string.
 
 Returns an error in case of failure.
 
@@ -308,18 +337,8 @@ KEY_2=VALUE_${LAST_ID}
 Make code to loads custom values into environment:
 
 ```
-// The method prints environment variables starting with 'KEY_'.
-echo := func() {
-    for _, item := range env.Environ() {
-        if strings.HasPrefix(item, "KEY_") {
-            fmt.Println(item)
-        }
-    }
-}
-
-// Printed only:
-//  KEY_0=VALUE_X
-echo()
+// Environment:
+// KEY_0=VALUE_X
 
 // Load values with replacement.
 err := env.Update(".env")
@@ -327,11 +346,10 @@ if err != nil {
     // something went wrong
 }
 
-// Printed all variables:
-//  KEY_0=VALUE_000         // data has been updated;
-//  KEY_1=VALUE_001         // add new value;
-//  KEY_2=VALUE_${LAST_ID}  // add new value without replecing $var.
-echo()
+// Environment:
+// KEY_0=VALUE_000         // data has been updated;
+// KEY_1=VALUE_001         // add new value;
+// KEY_2=VALUE_${LAST_ID}  // add new value without replecing $var.
 ```
 ## Exists
 
@@ -370,19 +388,16 @@ if err != nil {
 env.Exists("KEY_1")          // true
 env.Exists("KEY_0", "KEY_1") // true
 ```
+
 ## Unmarshal
 
-The `Unmarshal` to parses the environment data and stores the result in the
-value pointed to by scope. If scope isn't struct, not a pointer or is nil -
-returns an error.
+The `Unmarshal` to parses the environment data and stores the result in the value pointed to by scope. If scope isn't struct, not a pointer or is nil - returns an error.
 
-Supports the following field types: `int`, `int8`, `int16`, `int32`, `int64`, `uin`,
-`uint8`, `uin16`, `uint32`, `uin64`, `float32`, `float64`, `string`, `bool`, `url.URL`,
-`*url.URL` and `array` or `slice`
-from thous types. For other filed's types will be returned an error.
+Unmarshal method  supports the following field's types: `int`, `int8`, `int16`, `int32`, `int64`, `uin`, `uint8`, `uin16`, `uint32`, `uin64`, `float32`, `float64`, `string`, `bool`, `url.URL` and `pointers`, `array` or `slice` from thous types *(i.e. `*int`, ..., `[]int`, ..., `[]bool`, ..., `[2]*url.URL`, etc.)*. The nested structures will be processed recursively.
 
-If the structure implements Unmarshaller interface - the custom UnmarshalENV
-method will be called.
+For other filed's types (like `chan` or `map` ...) will be returned an error.
+
+If the structure implements Unmarshaler interface - the custom UnmarshalENV method will be called.
 
 Structure fields may have a `env` tag as `env:"KEY[,SEP]"` where:
 
@@ -414,20 +429,20 @@ type Config struct {
 Unmarshal data from the environment into Config struct.
 
 ```
-// Important: pointer to initialized structure!
-var config = &Config{}
+var config = Config{}
 
-err := env.Unmarshal(config)
+err := env.Unmarshal(&config)
 if err != nil {
     // something went wrong
 }
 
-config.Host         // "0.0.0.0"
-config.Port         // 8080
-config.AllowedHosts // []string{"localhost", "127.0.0.1"}
+// Object config:
+// config.Host         // "0.0.0.0"
+// config.Port         // 8080
+// config.AllowedHosts // []string{"localhost", "127.0.0.1"}
 ```
 
-If the structure will havs custom UnmarshalENV - it will be called:
+If the structure will has custom UnmarshalENV - it will be called:
 
 ```
 // UnmarshalENV it's custom method for unmarshalling.
@@ -448,18 +463,13 @@ config.AllowedHosts // []string{"192.168.0.1"}
 
 ## Marshal
 
-The `Marshal` converts the structure in to key/value and put it into
-environment with update old values. The first return value returns a map
-of the data that was correct set into environment. The seconden -
-error or nil.
+The `Marshal` converts the structure in to key/value and put it into environment with update old values. The first return value returns a map of the data that was correct set into environment. The second - error or nil.
 
-Supports the following field types: `int`, `int8`, `int16`, `int32`, `int64`, `uin`,
-`uint8`, `uin16`, `uint32`, `uin64`, `float32`, `float64`, `string`, `bool`, `url.URL`,
-`*url.URL` and `array` or `slice`
-from thous types. For other filed's types will be returned an error.
+Marshal methods  supports the following field's types: `int`, `int8`, `int16`, `int32`, `int64`, `uin`, `uint8`, `uin16`, `uint32`, `uin64`, `float32`, `float64`, `string`, `bool`, `url.URL` and `pointers`, `array` or `slice` from thous types *(i.e. `*int`, ..., `[]int`, ..., `[]bool`, ..., `[2]*url.URL`, etc.)*. The nested structures will be processed recursively.
 
-If the structure implements Marshaller interface - the custom MarshalENV
-method - will be called.
+For other filed's types (like `chan` or `map` ...) will be returned an error.
+
+If the structure implements Marshaler interface - the custom MarshalENV method - will be called.
 
 Structure fields may have a `env` tag as `env:"KEY[,SEP]"` where:
 
@@ -480,7 +490,7 @@ type Config struct {
 Marshal data into environment from the Config.
 
 ```
-// It can be a structure or a pointer to a structure.
+// It can be a structure or a pointer to the struct.
 var config = &Config{
     "localhost",
     8080,
@@ -499,8 +509,7 @@ env.Get("PORT")          // "8080"
 env.Get("ALLOWED_HOSTS") // "localhost:127.0.0.1"
 ```
 
-If object has MarshalENV and isn't a nil pointer - will be calls it
-method to scope convertation.
+If object has MarshalENV and isn't a nil pointer - will be calls it method to scope convertation.
 
 ```
 // MarshalENV it's custom method for marshalling.
@@ -518,21 +527,20 @@ env.Get("HOST")          // "192.168.0.1"
 env.Get("PORT")          // "80"
 env.Get("ALLOWED_HOSTS") // "192.168.0.1"
 ```
+
 # Synonyms
 
-There are synonyms for the  'os. * env' functions.
+There are synonyms for the  `os.*env` functions.
 
 ## Get
 
-The `Get` retrieves the value of the environment variable named by the key.
-It returns the value, which will be empty if the variable is not present.
+The `Get` retrieves the value of the environment variable named by the key. It returns the value, which will be empty if the variable is not present.
 
 *P.s. It is synonym for the `os.Getenv`*.
 
 ## Set
 
-The `Set` sets the value of the environment variable named by the key.
-It returns an error, if any.
+The `Set` sets the value of the environment variable named by the key. It returns an error, if any.
 
 *P.s. It is synonym for the `os.Setenv`*.
 
@@ -550,15 +558,12 @@ The `Clear` deletes all environment variables.
 
 ## Environ
 
-The `Environ` returns a copy of strings representing the environment,
-in the form "key=value".
+The `Environ` returns a copy of strings representing the environment, in the form "key=value".
 
 *P.s. It is synonym for the `os.Environ`*.
 
 ## Expand
 
-The `Expand` replaces `${var}` or `$var` in the string according to
-the values of the current environment variables. References to undefined
-variables are replaced by the empty string.
+The `Expand` replaces `${var}` or `$var` in the string according to the values of the current environment variables. References to undefined variables are replaced by the empty string.
 
 *P.s. It is synonym for the `os.ExpandEnv`*.
