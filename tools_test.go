@@ -23,8 +23,8 @@ type BoolDataTestType struct {
 	Correct bool
 }
 
-// TestParseTag tests parseTag function.
-func TestParseTag(t *testing.T) {
+// TestParseFieldTag tests parseFieldTag function.
+func TestParseFieldTag(t *testing.T) {
 	var tests = [][]string{
 		//       tagValue, defaultName, defaultSep
 		[]string{"", "HOST", " ", "HOST", " "},
@@ -35,7 +35,7 @@ func TestParseTag(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		name, sep := parseTag(test[0], test[1], test[2])
+		name, sep := parseFieldTag(test[0], test[1], test[2])
 		if test[3] != name {
 			t.Errorf("incorrect value for name `%s`!=`%s`", test[3], name)
 		}

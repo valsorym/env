@@ -62,13 +62,12 @@ func unmarshalENV(obj interface{}, pfx string) error {
 		item := inst.Value.FieldByName(field.Name)
 
 		// Get key and sep for sequences.
-		key, sep := parseTag(field.Tag.Get("env"), field.Name, " ")
+		key, sep := parseFieldTag(field.Tag.Get("env"), field.Name, " ")
 		key = fmt.Sprintf("%s%s", pfx, key)
 		value := Get(key)
 
 		// Set values of the desired type.
-		kind := item.Kind()
-		switch kind {
+		switch item.Kind() {
 		case reflect.Array:
 			max := item.Type().Len()
 			seq := strings.Split(value, sep)
