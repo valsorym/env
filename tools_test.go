@@ -23,6 +23,7 @@ type BoolDataTestType struct {
 	Correct bool
 }
 
+/*
 // TestParseFieldTag tests parseFieldTag function.
 func TestParseFieldTag(t *testing.T) {
 	var tests = [][]string{
@@ -45,7 +46,7 @@ func TestParseFieldTag(t *testing.T) {
 		}
 	}
 }
-
+*/
 // TestIsEmpty tests isEmpty function.
 // Function returns true for empty or comment strings.
 func TestIsEmpty(t *testing.T) {

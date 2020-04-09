@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file.
 
 /*
-The env package implements a set of functions of the environment management.
+Package env implements a set of functions of the environment management.
 
 The env package allows to control environment's variables: set new variables,
 delete variables, get value by variable name, load env-file into environment,

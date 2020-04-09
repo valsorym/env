@@ -1,7 +1,6 @@
 package env
 
 import (
-	"errors"
 	"fmt"
 	"net/url"
 	"reflect"
@@ -62,9 +61,22 @@ func unmarshalENV(obj interface{}, pfx string) error {
 		item := inst.Value.FieldByName(field.Name)
 
 		// Get key and sep for sequences.
-		key, sep := parseFieldTag(field.Tag.Get("env"), field.Name, " ")
+		key, value, sep, err := splitFieldTag(field.Tag.Get("env"))
+		if err != nil {
+			return err
+		}
+
+		// Create full key name.
+		if len(key) == 0 {
+			key = field.Name
+		}
+
 		key = fmt.Sprintf("%s%s", pfx, key)
-		value := Get(key)
+
+		// If the value is defined in environment set it into value.
+		if Exists(key) {
+			value = Get(key)
+		}
 
 		// Set values of the desired type.
 		switch item.Kind() {
@@ -72,11 +84,9 @@ func unmarshalENV(obj interface{}, pfx string) error {
 			max := item.Type().Len()
 			seq := strings.Split(value, sep)
 			if len(seq) > max {
-				return errors.New(fmt.Sprintf(
-					"%d items overwhelms the [%d]array",
-					len(seq), max,
-				))
+				return fmt.Errorf("%d overflows the [%d]array", len(seq), max)
 			}
+
 			err := setSequence(&item, strings.Split(value, sep))
 			if err != nil {
 				return err
@@ -118,7 +128,10 @@ func unmarshalENV(obj interface{}, pfx string) error {
 			switch {
 			case item.Type() == reflect.TypeOf(url.URL{}):
 				// If a url.URL structure.
-				setValue(item, value)
+				err := setValue(item, value)
+				if err != nil {
+					return err
+				}
 			default:
 				// If a structure of the another's types.
 				// P.s. Not a url.URL.
@@ -148,7 +161,7 @@ func setSequence(item *reflect.Value, seq []string) (err error) {
 	defer func() {
 		// Catch the panic and return an exception as a value.
 		if r := recover(); r != nil {
-			err = errors.New(fmt.Sprintf("%v", r))
+			err = fmt.Errorf("%v", r)
 		}
 	}()
 

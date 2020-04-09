@@ -18,48 +18,6 @@ var (
 	)
 )
 
-// instance is an auxiliary structure for performing reflection.
-type instance struct {
-	Ptr   reflect.Value
-	Type  reflect.Type
-	Kind  reflect.Kind
-	Value reflect.Value
-
-	IsPtr    bool
-	IsStruct bool
-	IsValid  bool
-}
-
-// Init defines the main reflect's parameters.
-func (inst *instance) Init(obj interface{}) {
-	inst.Type = reflect.TypeOf(obj)
-	inst.Value = reflect.ValueOf(obj)
-	inst.Kind = inst.Type.Kind()
-
-	if inst.Kind == reflect.Ptr {
-		inst.IsPtr = true
-		inst.Ptr = inst.Value
-		inst.Type = inst.Type.Elem()
-		inst.Kind = inst.Type.Kind()
-		inst.Value = inst.Value.Elem()
-	} else {
-		inst.Ptr = reflect.New(inst.Type)
-		tmp := inst.Ptr.Elem()
-		tmp.Set(inst.Value)
-	}
-
-	inst.IsStruct = inst.Kind == reflect.Struct
-	inst.IsValid = inst.Value.IsValid()
-}
-
-// Implements returns true if instance implements interface.
-//
-// Usage:
-//	if inst.Implements((*CustomInterface)(nil)) { ... }
-func (inst *instance) Implements(ifc interface{}) bool {
-	return inst.Ptr.Type().Implements(reflect.TypeOf(ifc).Elem())
-}
-
 // isEmpty returns true if string contains separators or comment only.
 func isEmpty(str string) bool {
 	return emptyRegex.Match([]byte(str))
@@ -133,23 +91,6 @@ func parseExpression(exp string) (key, value string, err error) {
 			chunks = strings.Split(chunks[0], " ")
 			value = strings.TrimSpace(chunks[0])
 		}
-	}
-
-	return
-}
-
-// parseFieldTag parses field's tag as [name[, sep]] where:
-//     name - variable's name in the environment;
-//     sep - separator for the list (only for arrays and slices).
-func parseFieldTag(value, defaultName, defaultSep string) (name, sep string) {
-	var r = []*string{&name, &sep}
-	name, sep = defaultName, defaultSep
-
-	for i, v := range strings.Split(value, ",") {
-		if len(v) == 0 || i >= len(r) {
-			continue
-		}
-		*r[i] = v
 	}
 
 	return

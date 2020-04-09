@@ -7,16 +7,20 @@ import (
 	"testing"
 )
 
-// CustomUnmarshal structure with custom UnmarshalENV method.
-type CustomUnmarshal struct {
+// The str convert sequence in string.
+func str(seq interface{}) string {
+	return strings.Trim(strings.Replace(fmt.Sprint(seq), " ", ":", -1), "[]")
+}
+
+// The dataUnmarshalENV structure with custom UnmarshalENV method.
+type dataUnmarshalENV struct {
 	Host         string   `env:"HOST"`
 	Port         int      `env:"PORT"`
 	AllowedHosts []string `env:"ALLOWED_HOSTS,:"`
 }
 
 // UnmarshalENV the custom method for unmarshalling.
-func (c *CustomUnmarshal) UnmarshalENV() error {
-	// Test data set manually.
+func (c *dataUnmarshalENV) UnmarshalENV() error {
 	c.Host = "192.168.0.1"
 	c.Port = 80
 	c.AllowedHosts = []string{"192.168.0.1"}
@@ -26,8 +30,8 @@ func (c *CustomUnmarshal) UnmarshalENV() error {
 // TestUnmarshalENVNotPointer tests unmarshalENV for the correct handling
 // of an exception for a non-pointer value.
 func TestUnmarshalENVNotPointer(t *testing.T) {
-	type Empty struct{}
-	if err := unmarshalENV(Empty{}, ""); err == nil {
+	type data struct{}
+	if err := unmarshalENV(data{}, ""); err == nil {
 		t.Error("An exception must be thrown on the value of the non-pointer.")
 	}
 }
@@ -87,13 +91,17 @@ func TestUnmarshalENVNumber(t *testing.T) {
 
 	// Correct value.
 	for i := 0; i < 3; i++ {
+		var err error
 		for key, data := range tests {
 			var d = &Number{}
 
 			Clear()
-			Set(key, data[i])
+			err = Set(key, data[i])
+			if err != nil {
+				t.Error(err)
+			}
 
-			err := unmarshalENV(d, "")
+			err = unmarshalENV(d, "")
 			switch i {
 			case 0:
 				if err != nil {
@@ -310,11 +318,6 @@ func TestUnmarshalENVSlice(t *testing.T) {
 		}
 	)
 
-	// Convert slice into string.
-	toStr := func(v interface{}) string {
-		return strings.Trim(strings.Replace(fmt.Sprint(v), " ", ":", -1), "[]")
-	}
-
 	// Testing correct values.
 	for key, value := range corretc {
 		var d = &Slice{}
@@ -329,60 +332,60 @@ func TestUnmarshalENVSlice(t *testing.T) {
 
 		switch key {
 		case "KEY_INT":
-			if r := toStr(d.KeyInt); r != value {
+			if r := str(d.KeyInt); r != value {
 				t.Errorf("KeyInt == `%s` but need `%s`", r, value)
 			}
 		case "KEY_INT8":
-			if r := toStr(d.KeyInt8); r != value {
+			if r := str(d.KeyInt8); r != value {
 				t.Errorf("KeyInt8 == `%s` but need `%s`", r, value)
 			}
 		case "KEY_INT16":
-			if r := toStr(d.KeyInt16); r != value {
+			if r := str(d.KeyInt16); r != value {
 				t.Errorf("KeyInt16 == `%s` but need `%s`", r, value)
 			}
 		case "KEY_INT32":
-			if r := toStr(d.KeyInt32); r != value {
+			if r := str(d.KeyInt32); r != value {
 				t.Errorf("KeyInt32 == `%s` but need `%s`", r, value)
 			}
 		case "KEY_INT64":
-			if r := toStr(d.KeyInt64); r != value {
+			if r := str(d.KeyInt64); r != value {
 				t.Errorf("KeyInt64 == `%s` but need `%s`", r, value)
 			}
 		case "KEY_UINT":
-			if r := toStr(d.KeyUint); r != value {
+			if r := str(d.KeyUint); r != value {
 				t.Errorf("KeyUint == `%s` but need `%s`", r, value)
 			}
 		case "KEY_UINT8":
-			if r := toStr(d.KeyUint8); r != value {
+			if r := str(d.KeyUint8); r != value {
 				t.Errorf("KeyUint8 == `%s` but need `%s`", r, value)
 			}
 		case "KEY_UINT16":
-			if r := toStr(d.KeyUint16); r != value {
+			if r := str(d.KeyUint16); r != value {
 				t.Errorf("KeyUint16 == `%s` but need `%s`", r, value)
 			}
 		case "KEY_UINT32":
-			if r := toStr(d.KeyUint32); r != value {
+			if r := str(d.KeyUint32); r != value {
 				t.Errorf("KeyUint32 == `%s` but need `%s`", r, value)
 			}
 		case "KEY_UINT64":
-			if r := toStr(d.KeyUint64); r != value {
+			if r := str(d.KeyUint64); r != value {
 				t.Errorf("KeyUint64 == `%s` but need `%s`", r, value)
 			}
 		case "KEY_FLOAT32":
-			if r := toStr(d.KeyFloat32); r != value {
+			if r := str(d.KeyFloat32); r != value {
 				t.Errorf("KeyFloat32 == `%s` but need `%s`", r, value)
 			}
 		case "KEY_FLOAT64":
-			if r := toStr(d.KeyFloat64); r != value {
+			if r := str(d.KeyFloat64); r != value {
 				t.Errorf("KeyFloat64 == `%s` but need `%s`", r, value)
 			}
 		case "KEY_STRING":
-			if r := toStr(d.KeyString); r != value {
+			if r := str(d.KeyString); r != value {
 				t.Errorf("KeyString == `%s` but need `%s`", r, value)
 			}
 		case "KEY_BOOL":
 			value = "true:true:true:true:false:false:false:false"
-			if r := toStr(d.KeyBool); r != value {
+			if r := str(d.KeyBool); r != value {
 				t.Errorf("KeyBoll == `%s` but need `%s`", r, value)
 			}
 		}
@@ -482,9 +485,6 @@ func TestUnmarshalENVArray(t *testing.T) {
 	)
 
 	// Convert slice into string.
-	toStr := func(v interface{}) string {
-		return strings.Trim(strings.Replace(fmt.Sprint(v), " ", ":", -1), "[]")
-	}
 
 	// Test correct values.
 	for key, value := range corretc {
@@ -500,60 +500,60 @@ func TestUnmarshalENVArray(t *testing.T) {
 
 		switch key {
 		case "KEY_INT":
-			if r := toStr(d.KeyInt); r != value {
+			if r := str(d.KeyInt); r != value {
 				t.Errorf("KeyInt == `%s` but need `%s`", r, value)
 			}
 		case "KEY_INT8":
-			if r := toStr(d.KeyInt8); r != value {
+			if r := str(d.KeyInt8); r != value {
 				t.Errorf("KeyInt8 == `%s` but need `%s`", r, value)
 			}
 		case "KEY_INT16":
-			if r := toStr(d.KeyInt16); r != value {
+			if r := str(d.KeyInt16); r != value {
 				t.Errorf("KeyInt16 == `%s` but need `%s`", r, value)
 			}
 		case "KEY_INT32":
-			if r := toStr(d.KeyInt32); r != value {
+			if r := str(d.KeyInt32); r != value {
 				t.Errorf("KeyInt32 == `%s` but need `%s`", r, value)
 			}
 		case "KEY_INT64":
-			if r := toStr(d.KeyInt64); r != value {
+			if r := str(d.KeyInt64); r != value {
 				t.Errorf("KeyInt64 == `%s` but need `%s`", r, value)
 			}
 		case "KEY_UINT":
-			if r := toStr(d.KeyUint); r != value {
+			if r := str(d.KeyUint); r != value {
 				t.Errorf("KeyUint == `%s` but need `%s`", r, value)
 			}
 		case "KEY_UINT8":
-			if r := toStr(d.KeyUint8); r != value {
+			if r := str(d.KeyUint8); r != value {
 				t.Errorf("KeyUint8 == `%s` but need `%s`", r, value)
 			}
 		case "KEY_UINT16":
-			if r := toStr(d.KeyUint16); r != value {
+			if r := str(d.KeyUint16); r != value {
 				t.Errorf("KeyUint16 == `%s` but need `%s`", r, value)
 			}
 		case "KEY_UINT32":
-			if r := toStr(d.KeyUint32); r != value {
+			if r := str(d.KeyUint32); r != value {
 				t.Errorf("KeyUint32 == `%s` but need `%s`", r, value)
 			}
 		case "KEY_UINT64":
-			if r := toStr(d.KeyUint64); r != value {
+			if r := str(d.KeyUint64); r != value {
 				t.Errorf("KeyUint64 == `%s` but need `%s`", r, value)
 			}
 		case "KEY_FLOAT32":
-			if r := toStr(d.KeyFloat32); r != value {
+			if r := str(d.KeyFloat32); r != value {
 				t.Errorf("KeyFloat32 == `%s` but need `%s`", r, value)
 			}
 		case "KEY_FLOAT64":
-			if r := toStr(d.KeyFloat64); r != value {
+			if r := str(d.KeyFloat64); r != value {
 				t.Errorf("KeyFloat64 == `%s` but need `%s`", r, value)
 			}
 		case "KEY_STRING":
-			if r := toStr(d.KeyString); r != value {
+			if r := str(d.KeyString); r != value {
 				t.Errorf("KeyString == `%s` but need `%s`", r, value)
 			}
 		case "KEY_BOOL":
 			value = "true:true:true:true:false:false:false:false"
-			if r := toStr(d.KeyBool); r != value {
+			if r := str(d.KeyBool); r != value {
 				t.Errorf("KeyBoll == `%s` but need `%s`", r, value)
 			}
 		}
@@ -586,17 +586,15 @@ func TestUnmarshalENVArray(t *testing.T) {
 	}
 }
 
-///////////////////////////////////////////////////////////////////////////////
-
 // TestUnmarshalURL tests unmarshalENV for url.URL type.
 func TestUnmarshalURL(t *testing.T) {
 	type URL struct {
 		KeyURLPlain      url.URL     `env:"KEY_URL_PLAIN"`
 		KeyURLPoint      *url.URL    `env:"KEY_URL_POINT"`
-		KeyURLPlainSlice []url.URL   `env:"KEY_URL_PLAIN_SLICE,!"`
-		KeyURLPointSlice []*url.URL  `env:"KEY_URL_POINT_SLICE,!"`
-		KeyURLPlainArray [2]url.URL  `env:"KEY_URL_PLAIN_ARRAY,!"`
-		KeyURLPointArray [2]*url.URL `env:"KEY_URL_POINT_ARRAY,!"`
+		KeyURLPlainSlice []url.URL   `env:"KEY_URL_PLAIN_SLICE,,!"`
+		KeyURLPointSlice []*url.URL  `env:"KEY_URL_POINT_SLICE,,!"`
+		KeyURLPlainArray [2]url.URL  `env:"KEY_URL_PLAIN_ARRAY,,!"`
+		KeyURLPointArray [2]*url.URL `env:"KEY_URL_POINT_ARRAY,,!"`
 	}
 	var (
 		slice []string
@@ -757,7 +755,7 @@ func TestUnmarshalStructPtr(t *testing.T) {
 // TestUnmarshalENVCustom tests unmarshalENV function
 // with custom UnmarshalENV method.
 func TestUnmarshalENVCustom(t *testing.T) {
-	var c = &CustomUnmarshal{}
+	var c = &dataUnmarshalENV{}
 
 	// Set test data.
 	Clear()
@@ -792,7 +790,7 @@ func TestUnmarshalENVStringPtr(t *testing.T) {
 		KeyString *string `env:"KEY_STRING"`
 	}
 	var (
-		keyString string = ""
+		keyString string
 
 		d = String{KeyString: &keyString}
 	)
@@ -807,4 +805,63 @@ func TestUnmarshalENVStringPtr(t *testing.T) {
 		t.Errorf("Incorrect value set for KEY_STRING: %v", *d.KeyString)
 	}
 
+}
+
+// TestUnmarshalDefaultValue tests unmarshalENV for default value.
+func TestUnmarshalDefaultValue(t *testing.T) {
+	type data struct {
+		Host         string    `env:"HOST,0.0.0.0"`
+		AllowedHosts []string  `env:"ALLOWED_HOSTS,{localhost:0.0.0.0},:"`
+		Names        [3]string `env:"NAME_LIST,'John,Bob,Smit',,"` // sep `,`
+	}
+
+	var (
+		d   data
+		err error
+	)
+
+	Clear() // make empty environment
+
+	// Unmarshaling wit default values.
+	d = data{}
+	err = unmarshalENV(&d, "")
+	if err != nil {
+		t.Error("Incorrect ummarshaling.")
+	}
+
+	if d.Host != "0.0.0.0" {
+		t.Errorf("incorrect Host %s", d.Host)
+	}
+
+	if str(d.AllowedHosts) != "localhost:0.0.0.0" {
+		t.Errorf("incorrect AllowedHosts %s", d.AllowedHosts)
+	}
+
+	if str(d.Names) != "John:Bob:Smit" {
+		t.Errorf("incorrect AllowedHosts %s", d.AllowedHosts)
+	}
+
+	// Set any values.
+	Set("HOST", "localhost")
+	Set("ALLOWED_HOSTS", "127.0.0.1:localhost")
+	Set("NAME_LIST", "John")
+
+	// Unmarshaling wit environment values.
+	d = data{}
+	err = unmarshalENV(&d, "")
+	if err != nil {
+		t.Error("Incorrect ummarshaling.")
+	}
+
+	if d.Host == "0.0.0.0" {
+		t.Errorf("Host sets as default %s", d.Host)
+	}
+
+	if str(d.AllowedHosts) == "localhost:0.0.0.0" {
+		t.Errorf("AllowedHosts sets as default %s", d.AllowedHosts)
+	}
+
+	if str(d.Names) == "John:Bob:Smit" {
+		t.Errorf("Names setas as default %s", d.Names)
+	}
 }

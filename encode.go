@@ -65,7 +65,15 @@ func marshalENV(obj interface{}, pfx string) ([]string, error) {
 			item = item.Elem()
 		}
 
-		key, sep = parseFieldTag(field.Tag.Get("env"), field.Name, " ")
+		key, _, sep, err = splitFieldTag(field.Tag.Get("env"))
+		if err != nil {
+			return []string{}, err
+		}
+
+		if len(key) == 0 {
+			key = field.Name
+		}
+
 		switch item.Kind() {
 		case reflect.Array, reflect.Slice:
 			value, err = getSequence(&item, sep)

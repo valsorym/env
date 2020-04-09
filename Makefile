@@ -48,3 +48,14 @@ test-cover:
 		go test -coverprofile=/tmp/coverage.out github.com/goloop/env && \
 		go tool cover -func=/tmp/coverage.out && \
 		go tool cover -html=/tmp/coverage.out
+lint:
+	# GOLANGCI-LINT
+	# Install golangci-lint as:
+	# curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.24.0
+	@cd ${GOPATH}/src/${REPOSITORY_NAME}/${PACKAGE_NAME} && \
+	golangci-lint run --no-config --issues-exit-code=0 --timeout=30m \
+		--disable-all --enable=deadcode  --enable=gocyclo --enable=golint \
+		--enable=varcheck --enable=structcheck --enable=maligned \
+		--enable=errcheck --enable=dupl --enable=ineffassign \
+		--enable=interfacer --enable=unconvert --enable=goconst \
+		--enable=gosec --enable=megacheck

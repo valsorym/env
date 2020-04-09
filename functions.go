@@ -241,7 +241,7 @@ func Exists(keys ...string) bool {
 }
 
 // Unmarshal to parses the environment data and stores the result in the value
-// pointed to by scope. If scope isn't struct, not a pointer or is nil -
+// pointed to by obj. If the obj isn't pointer to struct or is nil -
 // returns an error.
 //
 // Unmarshal method supports the following field's types: int, int8, int16,
@@ -255,10 +255,10 @@ func Exists(keys ...string) bool {
 // If the structure implements Unmarshaller interface - the custom UnmarshalENV
 // method will be called.
 //
-// Structure fields may have a env tag as `env:"KEY[,SEP]"` where:
+// Structure fields may have a env tag as `env:"key[,sep]"` where:
 //
-//    KEY - matches the name of the key in the environment;
-//    SEP - optional argument, sets the separator for lists (default: space).
+//    key - matches the name of the key in the environment;
+//    sep - optional argument, sets the separator for lists (default: space).
 //
 // Suppose that the some values was set into environment as:
 //
@@ -308,8 +308,8 @@ func Exists(keys ...string) bool {
 //    config.Host         // "192.168.0.1"
 //    config.Port         // 80
 //    config.AllowedHosts // []string{"192.168.0.1"}
-func Unmarshal(scope interface{}) error {
-	return unmarshalENV(scope, "")
+func Unmarshal(obj interface{}) error {
+	return unmarshalENV(obj, "")
 }
 
 // Marshal converts the structure in to key/value and put it into environment

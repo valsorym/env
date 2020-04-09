@@ -49,8 +49,8 @@ func TestMarshalENV(t *testing.T) {
 	type Struct struct {
 		Host         string    `env:"HOST"`
 		Port         int       `env:"PORT"`
-		AllowedHosts []string  `env:"ALLOWED_HOSTS,!"`
-		AllowedUsers [2]string `env:"ALLOWED_USERS,:"`
+		AllowedHosts []string  `env:"ALLOWED_HOSTS,,!"`
+		AllowedUsers [2]string `env:"ALLOWED_USERS,,:"`
 	}
 	var value = Struct{
 		"localhost",
@@ -88,8 +88,8 @@ func TestMarshalENVPtr(t *testing.T) {
 	type Struct struct {
 		Host         string    `env:"HOST"`
 		Port         int       `env:"PORT"`
-		AllowedHosts []string  `env:"ALLOWED_HOSTS,!"`
-		AllowedUsers [2]string `env:"ALLOWED_USERS,:"`
+		AllowedHosts []string  `env:"ALLOWED_HOSTS,,!"`
+		AllowedUsers [2]string `env:"ALLOWED_USERS,,:"`
 	}
 	var value = &Struct{
 		"localhost",
@@ -185,10 +185,10 @@ func TestMarshalURL(t *testing.T) {
 	type URLTestType struct {
 		KeyURLPlain      url.URL     `env:"KEY_URL_PLAIN"`
 		KeyURLPoint      *url.URL    `env:"KEY_URL_POINT"`
-		KeyURLPlainSlice []url.URL   `env:"KEY_URL_PLAIN_SLICE,!"`
-		KeyURLPointSlice []*url.URL  `env:"KEY_URL_POINT_SLICE,!"`
-		KeyURLPlainArray [2]url.URL  `env:"KEY_URL_PLAIN_ARRAY,!"`
-		KeyURLPointArray [2]*url.URL `env:"KEY_URL_POINT_ARRAY,!"`
+		KeyURLPlainSlice []url.URL   `env:"KEY_URL_PLAIN_SLICE,,!"`
+		KeyURLPointSlice []*url.URL  `env:"KEY_URL_POINT_SLICE,,!"`
+		KeyURLPlainArray [2]url.URL  `env:"KEY_URL_PLAIN_ARRAY,,!"`
+		KeyURLPointArray [2]*url.URL `env:"KEY_URL_POINT_ARRAY,,!"`
 	}
 
 	var test string
