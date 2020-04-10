@@ -1,6 +1,7 @@
 package env
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -19,9 +20,21 @@ func TestGet(t *testing.T) {
 
 // TestSet tests Set function.
 func TestSet(t *testing.T) {
+	var (
+		err   error
+		tests = [][]string{
+			[]string{"KEY_0", "A"},
+			[]string{"KEY_1", "B"},
+		}
+	)
+
 	os.Clearenv()
-	Set("KEY_0", "A")
-	Set("KEY_1", "B")
+	for _, item := range tests {
+		err = Set(item[0], item[1])
+		if err != nil {
+			t.Error(err)
+		}
+	}
 
 	if a, b := os.Getenv("KEY_0"), os.Getenv("KEY_1"); a != "A" || b != "B" {
 		t.Errorf("Set function doesn't work.")
@@ -30,11 +43,26 @@ func TestSet(t *testing.T) {
 
 // TestUnset tests Unset function.
 func TestUnset(t *testing.T) {
-	os.Clearenv()
-	Set("KEY_0", "A")
-	Set("KEY_1", "B")
+	var (
+		err   error
+		tests = [][]string{
+			[]string{"KEY_0", "A"},
+			[]string{"KEY_1", "B"},
+		}
+	)
 
-	Unset("KEY_0")
+	os.Clearenv()
+	for _, item := range tests {
+		err = Set(item[0], item[1])
+		if err != nil {
+			t.Error(err)
+		}
+	}
+
+	err = Unset("KEY_0")
+	if err != nil {
+		t.Error(err)
+	}
 
 	if a, b := Get("KEY_0"), Get("KEY_1"); !(a != "A" || b == "B") {
 		t.Errorf("Unset function doesn't work.")
@@ -43,9 +71,21 @@ func TestUnset(t *testing.T) {
 
 // TestClear tests Clear function.
 func TestClear(t *testing.T) {
+	var (
+		err   error
+		tests = [][]string{
+			[]string{"KEY_0", "A"},
+			[]string{"KEY_1", "B"},
+		}
+	)
+
 	os.Clearenv()
-	Set("KEY_0", "A")
-	Set("KEY_1", "B")
+	for _, item := range tests {
+		err = Set(item[0], item[1])
+		if err != nil {
+			t.Error(err)
+		}
+	}
 
 	Clear()
 
@@ -64,7 +104,10 @@ func TestEnviron(t *testing.T) {
 
 	Clear()
 	for key, value := range tests {
-		Set(key, value)
+		err := Set(key, value)
+		if err != nil {
+			t.Error(err)
+		}
 	}
 
 	for _, value := range Environ() {
@@ -86,9 +129,12 @@ func TestExpand(t *testing.T) {
 	}
 
 	Clear()
-	Set("KEY_0", "7")
-	Set("KEY_1", "5")
-	Set("KEY_2", "3")
+	for i, item := range []string{"7", "5", "3"} {
+		err := Set(fmt.Sprintf("KEY_%d", i), item)
+		if err != nil {
+			t.Error(err)
+		}
+	}
 
 	// Tests.
 	for _, item := range tests {

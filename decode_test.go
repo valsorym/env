@@ -3,13 +3,34 @@ package env
 import (
 	"fmt"
 	"net/url"
+	"reflect"
 	"strings"
 	"testing"
 )
 
-// The str convert sequence in string.
-func str(seq interface{}) string {
-	return strings.Trim(strings.Replace(fmt.Sprint(seq), " ", ":", -1), "[]")
+// The str convert sequence in string where items are separated by sep.
+func str(seq interface{}, sep string) string {
+	return strings.Trim(strings.Replace(fmt.Sprint(seq), " ", sep, -1), "[]")
+}
+
+// The field returns data as string from the struct by field name.
+func field(v interface{}, name, sep string) string {
+	if strings.Contains(name, "_") {
+		var tmp string
+		for _, item := range strings.Split(name, "_") {
+			tmp += strings.Title(strings.ToLower(item))
+		}
+		name = tmp
+	}
+
+	r := reflect.ValueOf(v)
+	f := reflect.Indirect(r).FieldByName(name)
+
+	if f.Kind() == reflect.Slice || f.Kind() == reflect.Array {
+		return str(f, sep)
+	}
+
+	return fmt.Sprint(f)
 }
 
 // The dataUnmarshalENV structure with custom UnmarshalENV method.
@@ -19,11 +40,14 @@ type dataUnmarshalENV struct {
 	AllowedHosts []string `env:"ALLOWED_HOSTS,:"`
 }
 
-// UnmarshalENV the custom method for unmarshalling.
+// UnmarshalENV the custom method for unmarshalling data from the environment.
 func (c *dataUnmarshalENV) UnmarshalENV() error {
-	c.Host = "192.168.0.1"
+	// You can use different methods to get data from the environment
+	// like os.Getenv or env.Get and process the result according
+	// to custom requirements.
+	c.Host = "192.168.0.3"
 	c.Port = 80
-	c.AllowedHosts = []string{"192.168.0.1"}
+	c.AllowedHosts = []string{"192.168.0.1", "localhost"}
 	return nil
 }
 
@@ -32,31 +56,32 @@ func (c *dataUnmarshalENV) UnmarshalENV() error {
 func TestUnmarshalENVNotPointer(t *testing.T) {
 	type data struct{}
 	if err := unmarshalENV(data{}, ""); err == nil {
-		t.Error("An exception must be thrown on the value of the non-pointer.")
+		t.Error("An error is expected for non-pointer value.")
 	}
 }
 
 // TestUnmarshalENVNotInitialized tests unmarshalENV for the correct handling
 // of an exception for a not initialized value.
 func TestUnmarshalENVNotInitialized(t *testing.T) {
-	type Empty struct{}
-	var e *Empty
-	if err := unmarshalENV(e, ""); err == nil {
-		t.Error("An exception must be thrown on the not initialized value.")
+	type data struct{}
+	var d *data
+	if err := unmarshalENV(d, ""); err == nil {
+		t.Error("An error is expected for not initialized value.")
 	}
 }
 
 // TestUnmarshalENVNotStruct tests unmarshalENV for the correct handling
 // of an exception for a value that isn't struct.
 func TestUnmarshalENVNotStruct(t *testing.T) {
-	if err := unmarshalENV(new(int), ""); err == nil {
-		t.Error("An exception must be thrown on the value that isn't struct.")
+	var d = new(int)
+	if err := unmarshalENV(d, ""); err == nil {
+		t.Error("An error is expected for a pointer not to a structure.")
 	}
 }
 
-// TestUnmarshalENVNumber tests unmarshalENV for Int, Uint and Float types.
-func TestUnmarshalENVNumber(t *testing.T) {
-	type Number struct {
+// TestUnmarshalENVNumbers tests unmarshalENV for Int, Uint and Float types.
+func TestUnmarshalENVNumbers(t *testing.T) {
+	type data struct {
 		KeyInt     int     `env:"KEY_INT"`
 		KeyInt8    int8    `env:"KEY_INT8"`
 		KeyInt16   int16   `env:"KEY_INT16"`
@@ -72,154 +97,142 @@ func TestUnmarshalENVNumber(t *testing.T) {
 	}
 
 	var (
-		max   = "922337203685477580777555333"
-		tests = map[string][]string{
-			"KEY_INT":     []string{"2", "-2", max},
-			"KEY_INT8":    []string{"8", "-8", max},
-			"KEY_INT16":   []string{"16", "-16", max},
-			"KEY_INT32":   []string{"32", "-32", max},
-			"KEY_INT64":   []string{"64", "-64", max},
-			"KEY_UINT":    []string{"2", "-2", max},
-			"KEY_UINT8":   []string{"8", "-8", max},
-			"KEY_UINT16":  []string{"16", "-16", max},
-			"KEY_UINT32":  []string{"32", "-32", max},
-			"KEY_UINT64":  []string{"64", "-64", max},
-			"KEY_FLOAT32": []string{"32.0", "-32.0", max},
-			"KEY_FLOAT64": []string{"64.0", "-64.0", max},
+		overflow = "9999999999999999999999999999999999999999999999999999999999"
+		tests    = map[string][]string{
+			"KEY_INT":     []string{"2", "-2", overflow},
+			"KEY_INT8":    []string{"8", "-8", overflow},
+			"KEY_INT16":   []string{"16", "-16", overflow},
+			"KEY_INT32":   []string{"32", "-32", overflow},
+			"KEY_INT64":   []string{"64", "-64", overflow},
+			"KEY_UINT":    []string{"2", "-2", overflow},
+			"KEY_UINT8":   []string{"8", "-8", overflow},
+			"KEY_UINT16":  []string{"16", "-16", overflow},
+			"KEY_UINT32":  []string{"32", "-32", overflow},
+			"KEY_UINT64":  []string{"64", "-64", overflow},
+			"KEY_FLOAT32": []string{"32.3", "-32.5", overflow},
+			"KEY_FLOAT64": []string{"64.3", "-64.5", overflow},
 		}
 	)
 
-	// Correct value.
+	// Testing.
 	for i := 0; i < 3; i++ {
 		var err error
-		for key, data := range tests {
-			var d = &Number{}
+		for key, value := range tests {
+			var d = &data{}
 
+			// Set test data.
 			Clear()
-			err = Set(key, data[i])
+			err = Set(key, value[i])
 			if err != nil {
 				t.Error(err)
 			}
 
+			// Unmarshaling.
 			err = unmarshalENV(d, "")
+
+			// Check error of the unmarshalling.
 			switch i {
-			case 0:
+			case 0: // the value is correct for all types
+				// Should not cause an error.
 				if err != nil {
 					t.Error(err)
+					continue
 				}
-			case 1:
+			case 1: // value is not valid for some types
 				if !strings.Contains(key, "UINT") {
-					// Int and float types.
+					// For int and float types should not cause an error.
 					if err != nil {
 						t.Error(err)
+						continue
 					}
 				} else {
 					// Uint cannot be negative.
 					if err == nil {
-						t.Errorf("uint cannot be negative: %s", data[i])
+						t.Errorf("uint cannot be negative: %s", value[i])
 					}
 					continue
 				}
 			case 2:
-				// Ignore FloatX to check for `value out of range`.
-				if !strings.Contains(key, "FLOAT") {
-					if err == nil {
-						t.Errorf("for %s must be `value out of "+
-							"range` exception", key)
-					}
+				// Ignore Float64 to check for `value out of range`.
+				if !strings.Contains(key, "FLOAT64") && err == nil {
+					t.Errorf("for %s must be `value out of "+
+						"range` exception", key)
 				}
 				continue
 			}
 
-			switch key {
-			case "KEY_INT":
-				if v := fmt.Sprintf("%d", d.KeyInt); v != data[i] {
-					t.Errorf("value isn't correct `%s`!=`%s`", v, data[i])
-				}
-			case "KEY_INT8":
-				if v := fmt.Sprintf("%d", d.KeyInt8); v != data[i] {
-					t.Errorf("value isn't correct `%s`!=`%s`", v, data[i])
-				}
-			case "KEY_INT16":
-				if v := fmt.Sprintf("%d", d.KeyInt16); v != data[i] {
-					t.Errorf("value isn't correct `%s`!=`%s`", v, data[i])
-				}
-			case "KEY_INT32":
-				if v := fmt.Sprintf("%d", d.KeyInt32); v != data[i] {
-					t.Errorf("value isn't correct `%s`!=`%s`", v, data[i])
-				}
-			case "KEY_INT64":
-				if v := fmt.Sprintf("%d", d.KeyInt64); v != data[i] {
-					t.Errorf("value isn't correct `%s`!=`%s`", v, data[i])
-				}
-			case "KEY_UINT":
-				if v := fmt.Sprintf("%d", d.KeyUint); v != data[i] {
-					t.Errorf("value isn't correct `%s`!=`%s`", v, data[i])
-				}
-			case "KEY_UINT8":
-				if v := fmt.Sprintf("%d", d.KeyUint8); v != data[i] {
-					t.Errorf("value isn't correct `%s`!=`%s`", v, data[i])
-				}
-			case "KEY_UINT16":
-				if v := fmt.Sprintf("%d", d.KeyUint16); v != data[i] {
-					t.Errorf("value isn't correct `%s`!=`%s`", v, data[i])
-				}
-			case "KEY_UINT32":
-				if v := fmt.Sprintf("%d", d.KeyUint32); v != data[i] {
-					t.Errorf("value isn't correct `%s`!=`%s`", v, data[i])
-				}
-			case "KEY_UINT64":
-				if v := fmt.Sprintf("%d", d.KeyUint64); v != data[i] {
-					t.Errorf("value isn't correct `%s`!=`%s`", v, data[i])
-				}
+			// Check the correctness of the result.
+			if v := field(d, key, ""); v != value[i] {
+				t.Errorf("%s is incorrect `%s`!=`%s`", key, v, value[i])
 			}
 		}
 	}
 }
 
-// TestUnmarshalENVBoll tests unmarshalENV function for bool type.
+// TestUnmarshalENVBoll tests unmarshalENV function for bool types.
 func TestUnmarshalENVBool(t *testing.T) {
-	type Boolean struct {
+	type data struct {
 		KeyBool bool `env:"KEY_BOOL"`
 	}
 
-	var tests = map[string]bool{
-		"true":  true,
-		"false": false,
-		"0":     false,
-		"1":     true,
-		"":      false,
-		"True":  true,
-		"TRUE":  true,
-		"False": false,
-		"FALSE": false,
-	}
+	var (
+		correct = map[string]bool{
+			"true":  true,
+			"false": false,
+			"0":     false,
+			"1":     true,
+			"":      false,
+			"True":  true,
+			"TRUE":  true,
+			"False": false,
+			"FALSE": false,
+		}
+		incorrect = []string{
+			"ok",
+			"yes",
+			"no",
+			"0xff",
+			"true/false",
+		}
+	)
 
 	// Test correct values.
-	for value, test := range tests {
-		var d = &Boolean{}
+	for value, test := range correct {
+		var (
+			d   = &data{}
+			err error
+		)
 
 		Clear()
-		Set("KEY_BOOL", value)
+		err = Set("KEY_BOOL", value)
+		if err != nil {
+			t.Error(err)
+		}
 
-		err := unmarshalENV(d, "")
+		err = unmarshalENV(d, "")
 		if err != nil {
 			t.Error(err)
 		}
 
 		if d.KeyBool != test {
-			t.Errorf("KeyBool == %t but need %t", d.KeyBool, test)
+			t.Errorf("KeyBool is incorrect `%t`!=`%t`", d.KeyBool, test)
 		}
 	}
 
-	// Incorrect value.
-	for _, value := range []string{"string", "0.d", "true/false"} {
-		var d = &Boolean{}
+	// Test incorrect values.
+	for _, test := range incorrect {
+		var (
+			d   = &data{}
+			err error
+		)
 
 		Clear()
-		Set("KEY_BOOL", value)
+		err = Set("KEY_BOOL", test)
+		if err != nil {
+			t.Error(err)
+		}
 
-		err := unmarshalENV(d, "")
+		err = unmarshalENV(d, "")
 		if err == nil {
 			t.Error("didn't handle the error")
 		}
@@ -228,9 +241,10 @@ func TestUnmarshalENVBool(t *testing.T) {
 
 // TestUnmarshalENVString tests unmarshalENV function for string type.
 func TestUnmarshalENVString(t *testing.T) {
-	type String struct {
+	type data struct {
 		KeyString string `env:"KEY_STRING"`
 	}
+
 	var tests = []interface{}{
 		8080,
 		"Hello World",
@@ -241,332 +255,211 @@ func TestUnmarshalENVString(t *testing.T) {
 
 	// Test correct values.
 	for _, test := range tests {
-		var d = &String{}
-		var s = fmt.Sprintf("%v", test)
+		var (
+			d   = &data{}
+			s   = fmt.Sprintf("%v", test)
+			err error
+		)
 
 		Clear()
-		Set("KEY_STRING", s)
+		err = Set("KEY_STRING", s)
+		if err != nil {
+			t.Error(err)
+		}
 
-		err := unmarshalENV(d, "")
+		err = unmarshalENV(d, "")
 		if err != nil {
 			t.Error(err)
 		}
 
 		if d.KeyString != s {
-			t.Errorf("KeyString == `%s` but need `%s`", d.KeyString, s)
+			t.Errorf("KeyString is incorrect `%s`!=`%s`", d.KeyString, s)
 		}
 	}
 }
 
 // TestUnmarshalENVSlice tests unmarshalENV function for slice.
 func TestUnmarshalENVSlice(t *testing.T) {
-	type Slice struct {
-		KeyInt   []int   `env:"KEY_INT,:"`
-		KeyInt8  []int8  `env:"KEY_INT8,:"`
-		KeyInt16 []int16 `env:"KEY_INT16,:"`
-		KeyInt32 []int32 `env:"KEY_INT32,:"`
-		KeyInt64 []int64 `env:"KEY_INT64,:"`
+	// Use `#` as separator for items.
+	type data struct {
+		KeyInt   []int   `env:"KEY_INT,,#"`
+		KeyInt8  []int8  `env:"KEY_INT8,,#"`
+		KeyInt16 []int16 `env:"KEY_INT16,,#"`
+		KeyInt32 []int32 `env:"KEY_INT32,,#"`
+		KeyInt64 []int64 `env:"KEY_INT64,,#"`
 
-		KeyUint   []uint   `env:"KEY_UINT,:"`
-		KeyUint8  []uint8  `env:"KEY_UINT8,:"`
-		KeyUint16 []uint16 `env:"KEY_UINT16,:"`
-		KeyUint32 []uint32 `env:"KEY_UINT32,:"`
-		KeyUint64 []uint64 `env:"KEY_UINT64,:"`
+		KeyUint   []uint   `env:"KEY_UINT,,#"`
+		KeyUint8  []uint8  `env:"KEY_UINT8,,#"`
+		KeyUint16 []uint16 `env:"KEY_UINT16,,#"`
+		KeyUint32 []uint32 `env:"KEY_UINT32,,#"`
+		KeyUint64 []uint64 `env:"KEY_UINT64,,#"`
 
-		KeyFloat32 []float32 `env:"KEY_FLOAT32,:"`
-		KeyFloat64 []float64 `env:"KEY_FLOAT64,:"`
+		KeyFloat32 []float32 `env:"KEY_FLOAT32,,#"`
+		KeyFloat64 []float64 `env:"KEY_FLOAT64,,#"`
 
-		KeyString []string `env:"KEY_STRING,:"`
-		KeyBool   []bool   `env:"KEY_BOOL,:"`
+		KeyString []string `env:"KEY_STRING,,#"`
+		KeyBool   []bool   `env:"KEY_BOOL,,#"`
 	}
 
 	var (
 		corretc = map[string]string{
-			"KEY_INT":   "-30:-20:-10:0:10:20:30",
-			"KEY_INT8":  "-30:-20:-10:0:10:20:30",
-			"KEY_INT16": "-30:-20:-10:0:10:20:30",
-			"KEY_INT32": "-30:-20:-10:0:10:20:30",
-			"KEY_INT64": "-30:-20:-10:0:10:20:30",
+			"KEY_INT":   "-30#-20#-10#0#10#20#30",
+			"KEY_INT8":  "-30#-20#-10#0#10#20#30",
+			"KEY_INT16": "-30#-20#-10#0#10#20#30",
+			"KEY_INT32": "-30#-20#-10#0#10#20#30",
+			"KEY_INT64": "-30#-20#-10#0#10#20#30",
 
-			"KEY_UINT":   "0:10:20:30",
-			"KEY_UINT8":  "0:10:20:30",
-			"KEY_UINT16": "0:10:20:30",
-			"KEY_UINT32": "0:10:20:30",
-			"KEY_UINT64": "0:10:20:30",
+			"KEY_UINT":   "0#10#20#30",
+			"KEY_UINT8":  "0#10#20#30",
+			"KEY_UINT16": "0#10#20#30",
+			"KEY_UINT32": "0#10#20#30",
+			"KEY_UINT64": "0#10#20#30",
 
-			"KEY_FLOAT32": "-3.1:-1.27:0:1.27:3.3",
-			"KEY_FLOAT64": "-3.1:-1.27:0:1.27:3.3",
+			"KEY_FLOAT32": "-3.1#-1.27#0#1.27#3.3",
+			"KEY_FLOAT64": "-3.1#-1.27#0#1.27#3.3",
 
-			"KEY_STRING": "one:two:three:four:five",
-			"KEY_BOOL":   "1:true:True:TRUE:0:false:False:False",
+			"KEY_STRING": "one#two#three#four#five",
+			"KEY_BOOL":   "1#true#True#TRUE#0#false#False#False",
 		}
 		incorrect = map[string]string{
-			"KEY_INT":   "-30:-20:-10:A:10:20:30",
-			"KEY_INT8":  "-30:-20:-10:A:10:20:30",
-			"KEY_INT16": "-30:-20:-10:A:10:20:30",
-			"KEY_INT32": "-30:-20:-10:A:10:20:30",
-			"KEY_INT64": "-30:-20:-10:A:10:20:30",
+			"KEY_INT":   "-30#-20#-10#A#10#20#30",
+			"KEY_INT8":  "-30#-20#-10#A#10#20#30",
+			"KEY_INT16": "-30#-20#-10#A#10#20#30",
+			"KEY_INT32": "-30#-20#-10#A#10#20#30",
+			"KEY_INT64": "-30#-20#-10#A#10#20#30",
 
-			"KEY_UINT":   "0:10:-20:30",
-			"KEY_UINT8":  "0:10:-20:30",
-			"KEY_UINT16": "0:10:-20:30",
-			"KEY_UINT32": "0:10:-20:30",
-			"KEY_UINT64": "0:10:-20:30",
+			"KEY_UINT":   "0#10#-20#30",
+			"KEY_UINT8":  "0#10#-20#30",
+			"KEY_UINT16": "0#10#-20#30",
+			"KEY_UINT32": "0#10#-20#30",
+			"KEY_UINT64": "0#10#-20#30",
 
-			"KEY_FLOAT32": "-3.1:-1.27:A:1.27:3.3",
-			"KEY_FLOAT64": "-3.1:-1.27:A:1.27:3.3",
+			"KEY_FLOAT32": "-3.1#-1.27#A#1.27#3.3",
+			"KEY_FLOAT64": "-3.1#-1.27#A#1.27#3.3",
 		}
 	)
 
 	// Testing correct values.
 	for key, value := range corretc {
-		var d = &Slice{}
+		var (
+			d   = &data{}
+			err error
+		)
 
 		Clear()
-		Set(key, value)
-
-		err := unmarshalENV(d, "")
+		err = Set(key, value)
 		if err != nil {
 			t.Error(err)
 		}
 
-		switch key {
-		case "KEY_INT":
-			if r := str(d.KeyInt); r != value {
-				t.Errorf("KeyInt == `%s` but need `%s`", r, value)
-			}
-		case "KEY_INT8":
-			if r := str(d.KeyInt8); r != value {
-				t.Errorf("KeyInt8 == `%s` but need `%s`", r, value)
-			}
-		case "KEY_INT16":
-			if r := str(d.KeyInt16); r != value {
-				t.Errorf("KeyInt16 == `%s` but need `%s`", r, value)
-			}
-		case "KEY_INT32":
-			if r := str(d.KeyInt32); r != value {
-				t.Errorf("KeyInt32 == `%s` but need `%s`", r, value)
-			}
-		case "KEY_INT64":
-			if r := str(d.KeyInt64); r != value {
-				t.Errorf("KeyInt64 == `%s` but need `%s`", r, value)
-			}
-		case "KEY_UINT":
-			if r := str(d.KeyUint); r != value {
-				t.Errorf("KeyUint == `%s` but need `%s`", r, value)
-			}
-		case "KEY_UINT8":
-			if r := str(d.KeyUint8); r != value {
-				t.Errorf("KeyUint8 == `%s` but need `%s`", r, value)
-			}
-		case "KEY_UINT16":
-			if r := str(d.KeyUint16); r != value {
-				t.Errorf("KeyUint16 == `%s` but need `%s`", r, value)
-			}
-		case "KEY_UINT32":
-			if r := str(d.KeyUint32); r != value {
-				t.Errorf("KeyUint32 == `%s` but need `%s`", r, value)
-			}
-		case "KEY_UINT64":
-			if r := str(d.KeyUint64); r != value {
-				t.Errorf("KeyUint64 == `%s` but need `%s`", r, value)
-			}
-		case "KEY_FLOAT32":
-			if r := str(d.KeyFloat32); r != value {
-				t.Errorf("KeyFloat32 == `%s` but need `%s`", r, value)
-			}
-		case "KEY_FLOAT64":
-			if r := str(d.KeyFloat64); r != value {
-				t.Errorf("KeyFloat64 == `%s` but need `%s`", r, value)
-			}
-		case "KEY_STRING":
-			if r := str(d.KeyString); r != value {
-				t.Errorf("KeyString == `%s` but need `%s`", r, value)
-			}
-		case "KEY_BOOL":
-			value = "true:true:true:true:false:false:false:false"
-			if r := str(d.KeyBool); r != value {
-				t.Errorf("KeyBoll == `%s` but need `%s`", r, value)
-			}
+		err = unmarshalENV(d, "")
+		if err != nil {
+			t.Error(err)
+		}
+
+		if key == "KEY_BOOL" {
+			value = "true#true#true#true#false#false#false#false"
+		}
+
+		if v := field(d, key, "#"); v != value {
+			t.Errorf("%s is incorrect `%s` != `%s`", key, v, value)
 		}
 	}
 
 	// Testing incorrect values.
 	for key, value := range incorrect {
-		var d = &Slice{}
+		var (
+			d   = &data{}
+			err error
+		)
 
 		Clear()
-		Set(key, value)
+		err = Set(key, value)
+		if err != nil {
+			t.Error(err)
+		}
 
-		err := unmarshalENV(d, "")
+		err = unmarshalENV(d, "")
 		if err == nil {
-			t.Error("must be error")
+			t.Error("must be error for", value)
 		}
 	}
 }
 
 // TestUnmarshalENVArray tests unmarshalENV function with array.
 func TestUnmarshalENVArray(t *testing.T) {
-	type Array struct {
-		KeyInt   [7]int   `env:"KEY_INT,:"`
-		KeyInt8  [7]int8  `env:"KEY_INT8,:"`
-		KeyInt16 [7]int16 `env:"KEY_INT16,:"`
-		KeyInt32 [7]int32 `env:"KEY_INT32,:"`
-		KeyInt64 [7]int64 `env:"KEY_INT64,:"`
-
-		KeyUint   [4]uint   `env:"KEY_UINT,:"`
-		KeyUint8  [4]uint8  `env:"KEY_UINT8,:"`
-		KeyUint16 [4]uint16 `env:"KEY_UINT16,:"`
-		KeyUint32 [4]uint32 `env:"KEY_UINT32,:"`
-		KeyUint64 [4]uint64 `env:"KEY_UINT64,:"`
-
-		KeyFloat32 [5]float32 `env:"KEY_FLOAT32,:"`
-		KeyFloat64 [5]float64 `env:"KEY_FLOAT64,:"`
-
-		KeyString [5]string `env:"KEY_STRING,:"`
-		KeyBool   [8]bool   `env:"KEY_BOOL,:"`
+	// Use default separator for items (i.e. `:` symbol).
+	type data struct {
+		KeyInt     [5]int     `env:"KEY_INT"`
+		KeyUint    [4]uint    `env:"KEY_UINT"`
+		KeyFloat64 [5]float64 `env:"KEY_FLOAT64"`
+		KeyString  [5]string  `env:"KEY_STRING"`
+		KeyBool    [8]bool    `env:"KEY_BOOL"`
 	}
 
 	var (
 		corretc = map[string]string{
-			"KEY_INT":   "-30:-20:-10:0:10:20:30",
-			"KEY_INT8":  "-30:-20:-10:0:10:20:30",
-			"KEY_INT16": "-30:-20:-10:0:10:20:30",
-			"KEY_INT32": "-30:-20:-10:0:10:20:30",
-			"KEY_INT64": "-30:-20:-10:0:10:20:30",
-
-			"KEY_UINT":   "0:10:20:30",
-			"KEY_UINT8":  "0:10:20:30",
-			"KEY_UINT16": "0:10:20:30",
-			"KEY_UINT32": "0:10:20:30",
-			"KEY_UINT64": "0:10:20:30",
-
-			"KEY_FLOAT32": "-3.1:-1.27:0:1.27:3.3",
+			"KEY_INT":     "-20:-10:0:10:20",
+			"KEY_UINT":    "0:10:20:30",
 			"KEY_FLOAT64": "-3.1:-1.27:0:1.27:3.3",
-
-			"KEY_STRING": "one:two:three:four:five",
-			"KEY_BOOL":   "1:true:True:TRUE:0:false:False:False",
+			"KEY_STRING":  "one:two:three:four:five",
+			"KEY_BOOL":    "1:true:True:TRUE:0:false:False:False",
 		}
 		incorrect = map[string]string{
-			"KEY_INT":   "-30:-20:-10:A:10:20:30",
-			"KEY_INT8":  "-30:-20:-10:A:10:20:30",
-			"KEY_INT16": "-30:-20:-10:A:10:20:30",
-			"KEY_INT32": "-30:-20:-10:A:10:20:30",
-			"KEY_INT64": "-30:-20:-10:A:10:20:30",
-
-			"KEY_UINT":   "0:10:-20:30",
-			"KEY_UINT8":  "0:10:-20:30",
-			"KEY_UINT16": "0:10:-20:30",
-			"KEY_UINT32": "0:10:-20:30",
-			"KEY_UINT64": "0:10:-20:30",
-
-			"KEY_FLOAT32": "-3.1:-1.27:A:1.27:3.3",
+			"KEY_INT":     "-30:-20:-10:A:10:20:30",
+			"KEY_UINT":    "0:10:-20:30",
 			"KEY_FLOAT64": "-3.1:-1.27:A:1.27:3.3",
 		}
 		overflow = map[string]string{
-			"KEY_INT":   "-30:-20:-10:0:10:20:30:100",
-			"KEY_INT8":  "-30:-20:-10:0:10:20:30:100",
-			"KEY_INT16": "-30:-20:-10:0:10:20:30:100",
-			"KEY_INT32": "-30:-20:-10:0:10:20:30:100",
-			"KEY_INT64": "-30:-20:-10:0:10:20:30:100",
-
-			"KEY_UINT":   "0:10:20:30:100",
-			"KEY_UINT8":  "0:10:20:30:100",
-			"KEY_UINT16": "0:10:20:30:100",
-			"KEY_UINT32": "0:10:20:30:100",
-			"KEY_UINT64": "0:10:20:30:100",
-
-			"KEY_FLOAT32": "-3.1:-1.27:0:1.27:3.3:100.0",
+			"KEY_INT":     "-30:-20:-10:0:10:20:30:100",
+			"KEY_UINT":    "0:10:20:30:100",
 			"KEY_FLOAT64": "-3.1:-1.27:0:1.27:3.3:100.0",
-
-			"KEY_STRING": "one:two:three:four:five:one hundred",
-			"KEY_BOOL":   "1:true:True:TRUE:0:false:False:False:true",
+			"KEY_STRING":  "one:two:three:four:five:one hundred",
+			"KEY_BOOL":    "1:true:True:TRUE:0:false:False:False:true",
 		}
 	)
 
-	// Convert slice into string.
-
 	// Test correct values.
 	for key, value := range corretc {
-		var d = &Array{}
+		var (
+			d   = &data{}
+			err error
+		)
 
 		Clear()
-		Set(key, value)
-
-		err := unmarshalENV(d, "")
+		err = Set(key, value)
 		if err != nil {
 			t.Error(err)
 		}
 
-		switch key {
-		case "KEY_INT":
-			if r := str(d.KeyInt); r != value {
-				t.Errorf("KeyInt == `%s` but need `%s`", r, value)
-			}
-		case "KEY_INT8":
-			if r := str(d.KeyInt8); r != value {
-				t.Errorf("KeyInt8 == `%s` but need `%s`", r, value)
-			}
-		case "KEY_INT16":
-			if r := str(d.KeyInt16); r != value {
-				t.Errorf("KeyInt16 == `%s` but need `%s`", r, value)
-			}
-		case "KEY_INT32":
-			if r := str(d.KeyInt32); r != value {
-				t.Errorf("KeyInt32 == `%s` but need `%s`", r, value)
-			}
-		case "KEY_INT64":
-			if r := str(d.KeyInt64); r != value {
-				t.Errorf("KeyInt64 == `%s` but need `%s`", r, value)
-			}
-		case "KEY_UINT":
-			if r := str(d.KeyUint); r != value {
-				t.Errorf("KeyUint == `%s` but need `%s`", r, value)
-			}
-		case "KEY_UINT8":
-			if r := str(d.KeyUint8); r != value {
-				t.Errorf("KeyUint8 == `%s` but need `%s`", r, value)
-			}
-		case "KEY_UINT16":
-			if r := str(d.KeyUint16); r != value {
-				t.Errorf("KeyUint16 == `%s` but need `%s`", r, value)
-			}
-		case "KEY_UINT32":
-			if r := str(d.KeyUint32); r != value {
-				t.Errorf("KeyUint32 == `%s` but need `%s`", r, value)
-			}
-		case "KEY_UINT64":
-			if r := str(d.KeyUint64); r != value {
-				t.Errorf("KeyUint64 == `%s` but need `%s`", r, value)
-			}
-		case "KEY_FLOAT32":
-			if r := str(d.KeyFloat32); r != value {
-				t.Errorf("KeyFloat32 == `%s` but need `%s`", r, value)
-			}
-		case "KEY_FLOAT64":
-			if r := str(d.KeyFloat64); r != value {
-				t.Errorf("KeyFloat64 == `%s` but need `%s`", r, value)
-			}
-		case "KEY_STRING":
-			if r := str(d.KeyString); r != value {
-				t.Errorf("KeyString == `%s` but need `%s`", r, value)
-			}
-		case "KEY_BOOL":
+		err = unmarshalENV(d, "")
+		if err != nil {
+			t.Error(err)
+		}
+
+		if key == "KEY_BOOL" {
 			value = "true:true:true:true:false:false:false:false"
-			if r := str(d.KeyBool); r != value {
-				t.Errorf("KeyBoll == `%s` but need `%s`", r, value)
-			}
+		}
+
+		if v := field(d, key, ":"); v != value {
+			t.Errorf("%s is incorrect `%s` != `%s`", key, v, value)
 		}
 	}
 
 	// Test incorrect values.
 	for key, value := range incorrect {
-		var d = &Array{}
+		var (
+			d   = &data{}
+			err error
+		)
 
 		Clear()
-		Set(key, value)
+		err = Set(key, value)
+		if err != nil {
+			t.Error(err)
+		}
 
-		err := unmarshalENV(d, "")
+		err = unmarshalENV(d, "")
 		if err == nil {
 			t.Error("There should be an exception due to an invalid value.")
 		}
@@ -574,12 +467,18 @@ func TestUnmarshalENVArray(t *testing.T) {
 
 	// Test array overflow.
 	for key, value := range overflow {
-		var d = &Array{}
+		var (
+			d   = &data{}
+			err error
+		)
 
 		Clear()
-		Set(key, value)
+		err = Set(key, value)
+		if err != nil {
+			t.Error(err)
+		}
 
-		err := unmarshalENV(d, "")
+		err = unmarshalENV(d, "")
 		if err == nil {
 			t.Error("There should be an exception due to array overflow.")
 		}
@@ -588,7 +487,7 @@ func TestUnmarshalENVArray(t *testing.T) {
 
 // TestUnmarshalURL tests unmarshalENV for url.URL type.
 func TestUnmarshalURL(t *testing.T) {
-	type URL struct {
+	type data struct {
 		KeyURLPlain      url.URL     `env:"KEY_URL_PLAIN"`
 		KeyURLPoint      *url.URL    `env:"KEY_URL_POINT"`
 		KeyURLPlainSlice []url.URL   `env:"KEY_URL_PLAIN_SLICE,,!"`
@@ -596,40 +495,67 @@ func TestUnmarshalURL(t *testing.T) {
 		KeyURLPlainArray [2]url.URL  `env:"KEY_URL_PLAIN_ARRAY,,!"`
 		KeyURLPointArray [2]*url.URL `env:"KEY_URL_POINT_ARRAY,,!"`
 	}
+
 	var (
 		slice []string
 		str   string
+		err   error
+		d     = data{}
 
-		data = URL{}
+		defaults = [][]string{
+			[]string{
+				"KEY_URL_PLAIN",
+				"http://plain.example.com",
+			},
+			[]string{
+				"KEY_URL_POINT",
+				"http://point.example.com",
+			},
+			[]string{
+				"KEY_URL_PLAIN_SLICE",
+				"http://a.plain.example.com!http://b.plain.example.com",
+			},
+			[]string{
+				"KEY_URL_POINT_SLICE",
+				"http://a.point.example.com!http://b.point.example.com",
+			},
+			[]string{
+				"KEY_URL_PLAIN_ARRAY",
+				"http://c.plain.example.com!http://d.plain.example.com",
+			},
+			[]string{
+				"KEY_URL_POINT_ARRAY",
+				"http://c.point.example.com!http://d.point.example.com",
+			},
+		}
 	)
 
 	// Set tests data.
-	Set("KEY_URL_PLAIN", "http://plain.example.com")
-	Set("KEY_URL_POINT", "http://point.example.com")
-	Set("KEY_URL_PLAIN_SLICE",
-		"http://a.plain.example.com!http://b.plain.example.com")
-	Set("KEY_URL_POINT_SLICE",
-		"http://a.point.example.com!http://b.point.example.com")
-	Set("KEY_URL_PLAIN_ARRAY",
-		"http://c.plain.example.com!http://d.plain.example.com")
-	Set("KEY_URL_POINT_ARRAY",
-		"http://c.point.example.com!http://d.point.example.com")
+	for _, item := range defaults {
+		err = Set(item[0], item[1])
+		if err != nil {
+			t.Error(err)
+		}
+	}
 
 	// Unmarshaling.
-	unmarshalENV(&data, "")
+	err = unmarshalENV(&d, "")
+	if err != nil {
+		t.Error(err)
+	}
 
 	// Tests results.
-	if v := data.KeyURLPlain.String(); v != "http://plain.example.com" {
+	if v := d.KeyURLPlain.String(); v != "http://plain.example.com" {
 		t.Errorf("Incorrect unmarshaling plain url.URL: %s", v)
 	}
 
-	if v := data.KeyURLPoint.String(); v != "http://point.example.com" {
+	if v := d.KeyURLPoint.String(); v != "http://point.example.com" {
 		t.Errorf("Incorrect unmarshaling point url.URL: %s", v)
 	}
 
 	// Plain slice.
 	slice = []string{}
-	for _, v := range data.KeyURLPlainSlice {
+	for _, v := range d.KeyURLPlainSlice {
 		slice = append(slice, v.String())
 	}
 	str = strings.Trim(strings.Replace(fmt.Sprint(slice), " ", "!", -1), "[]")
@@ -639,7 +565,7 @@ func TestUnmarshalURL(t *testing.T) {
 
 	// Point slice.
 	slice = []string{}
-	for _, v := range data.KeyURLPointSlice {
+	for _, v := range d.KeyURLPointSlice {
 		slice = append(slice, v.String())
 	}
 	str = strings.Trim(strings.Replace(fmt.Sprint(slice), " ", "!", -1), "[]")
@@ -649,9 +575,10 @@ func TestUnmarshalURL(t *testing.T) {
 
 	// Plain array.
 	slice = []string{}
-	for _, v := range data.KeyURLPlainArray {
+	for _, v := range d.KeyURLPlainArray {
 		slice = append(slice, v.String())
 	}
+
 	str = strings.Trim(strings.Replace(fmt.Sprint(slice), " ", "!", -1), "[]")
 	if str != "http://c.plain.example.com!http://d.plain.example.com" {
 		t.Errorf("Incorrect unmarshaling plain array [2]url.URL: %s", str)
@@ -659,9 +586,10 @@ func TestUnmarshalURL(t *testing.T) {
 
 	// Point array.
 	slice = []string{}
-	for _, v := range data.KeyURLPointArray {
+	for _, v := range d.KeyURLPointArray {
 		slice = append(slice, v.String())
 	}
+
 	str = strings.Trim(strings.Replace(fmt.Sprint(slice), " ", "!", -1), "[]")
 	if str != "http://c.point.example.com!http://d.point.example.com" {
 		t.Errorf("Incorrect unmarshaling point array [2]*url.URL: %s", str)
@@ -684,28 +612,39 @@ func TestUnmarshalStruct(t *testing.T) {
 		HomePage url.URL `env:"HOME_PAGE"`
 	}
 
-	var c = Client{}
+	var (
+		err   error
+		c     = Client{}
+		tests = [][]string{
+			[]string{"USER_NAME", "Jerry"},
+			[]string{"USER_ADDRESS_COUNTRY", "UK"},
+			[]string{"HOME_PAGE", "http://example.org"},
+		}
+	)
 
-	Set("USER_NAME", "John")
-	Set("USER_ADDRESS_COUNTRY", "USA")
-	Set("HOME_PAGE", "http://example.com")
+	for _, item := range tests {
+		err = Set(item[0], item[1])
+		if err != nil {
+			t.Error(err)
+		}
+	}
 
 	// Unmarshaling.
-	err := unmarshalENV(&c, "")
+	err = unmarshalENV(&c, "")
 	if err != nil {
 		t.Error("Incorrect ummarshaling.")
 	}
 
 	// Tests.
-	if c.User.Address.Country != "USA" {
+	if c.User.Address.Country != "UK" {
 		t.Errorf("Incorrect ummarshaling User.Address: %v", c.User.Address)
 	}
 
-	if c.User.Name != "John" {
+	if c.User.Name != "Jerry" {
 		t.Errorf("Incorrect ummarshaling User: %v", c.User)
 	}
 
-	if c.HomePage.String() != "http://example.com" {
+	if c.HomePage.String() != "http://example.org" {
 		t.Errorf("Incorrect ummarshaling url.URL: %v", c.HomePage)
 	}
 }
@@ -726,28 +665,39 @@ func TestUnmarshalStructPtr(t *testing.T) {
 		HomePage *url.URL `env:"HOME_PAGE"`
 	}
 
-	var c = Client{}
+	var (
+		err   error
+		c     = Client{}
+		tests = [][]string{
+			[]string{"USER_NAME", "Lucy"},
+			[]string{"USER_ADDRESS_COUNTRY", "UA"},
+			[]string{"HOME_PAGE", "http://example.net"},
+		}
+	)
 
-	Set("USER_NAME", "John")
-	Set("USER_ADDRESS_COUNTRY", "USA")
-	Set("HOME_PAGE", "http://example.com")
+	for _, item := range tests {
+		err = Set(item[0], item[1])
+		if err != nil {
+			t.Error(err)
+		}
+	}
 
 	// Unmarshaling.
-	err := unmarshalENV(&c, "")
+	err = unmarshalENV(&c, "")
 	if err != nil {
 		t.Error("Incorrect ummarshaling.")
 	}
 
 	// Tests.
-	if c.User.Address.Country != "USA" {
+	if c.User.Address.Country != "UA" {
 		t.Errorf("Incorrect ummarshaling User.Address: %v", c.User.Address)
 	}
 
-	if c.User.Name != "John" {
+	if c.User.Name != "Lucy" {
 		t.Errorf("Incorrect ummarshaling User: %v", c.User)
 	}
 
-	if c.HomePage.String() != "http://example.com" {
+	if c.HomePage.String() != "http://example.net" {
 		t.Errorf("Incorrect ummarshaling url.URL: %v", c.HomePage)
 	}
 }
@@ -755,21 +705,32 @@ func TestUnmarshalStructPtr(t *testing.T) {
 // TestUnmarshalENVCustom tests unmarshalENV function
 // with custom UnmarshalENV method.
 func TestUnmarshalENVCustom(t *testing.T) {
-	var c = &dataUnmarshalENV{}
+	var (
+		c     = &dataUnmarshalENV{}
+		err   error
+		tests = [][]string{
+			[]string{"HOST", "0.0.0.1"},
+			[]string{"PORT", "8080"},
+			[]string{"ALLOWED_HOSTS", "localhost:127.0.0.1"},
+		}
+	)
 
 	// Set test data.
 	Clear()
-	Set("HOST", "localhost")                    // default: 192.168.0.1
-	Set("PORT", "8080")                         // default: 80
-	Set("ALLOWED_HOSTS", "localhost:127.0.0.1") // default: 192.168.0.1
+	for _, item := range tests {
+		err = Set(item[0], item[1])
+		if err != nil {
+			t.Error(err)
+		}
+	}
 
-	err := unmarshalENV(c, "")
+	err = unmarshalENV(c, "")
 	if err != nil {
 		t.Error(err)
 	}
 
 	// Test marshalling.
-	if c.Host != "192.168.0.1" {
+	if c.Host != "192.168.0.3" {
 		t.Errorf("Incorrect value set for HOST: %s", c.Host)
 	}
 
@@ -777,8 +738,7 @@ func TestUnmarshalENVCustom(t *testing.T) {
 		t.Errorf("Incorrect value set for PORT: %d", c.Port)
 	}
 
-	str := strings.Replace(fmt.Sprint(c.AllowedHosts), " ", ":", -1)
-	if value := strings.Trim(str, "[]"); value != "192.168.0.1" {
+	if value := str(c.AllowedHosts, ":"); value != "192.168.0.1:localhost" {
 		t.Errorf("Incorrect value set for ALLOWED_HOSTS: %v", value)
 	}
 }
@@ -786,17 +746,22 @@ func TestUnmarshalENVCustom(t *testing.T) {
 // TestUnmarshalENVStringPtr tests unmarshalENV function
 // for pointer on the string type.
 func TestUnmarshalENVStringPtr(t *testing.T) {
-	type String struct {
+	type data struct {
 		KeyString *string `env:"KEY_STRING"`
 	}
-	var (
-		keyString string
 
-		d = String{KeyString: &keyString}
+	var (
+		err error
+		s   string
+		d   = data{KeyString: &s}
 	)
 
-	Set("KEY_STRING", "Hello World")
-	err := unmarshalENV(&d, "")
+	err = Set("KEY_STRING", "Hello World")
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = unmarshalENV(&d, "")
 	if err != nil {
 		t.Error(err)
 	}
@@ -816,8 +781,13 @@ func TestUnmarshalDefaultValue(t *testing.T) {
 	}
 
 	var (
-		d   data
-		err error
+		d     data
+		err   error
+		tests = [][]string{
+			[]string{"HOST", "localhost"},
+			[]string{"ALLOWED_HOSTS", "127.0.0.1:localhost"},
+			[]string{"NAME_LIST", "John"},
+		}
 	)
 
 	Clear() // make empty environment
@@ -833,18 +803,21 @@ func TestUnmarshalDefaultValue(t *testing.T) {
 		t.Errorf("incorrect Host %s", d.Host)
 	}
 
-	if str(d.AllowedHosts) != "localhost:0.0.0.0" {
+	if str(d.AllowedHosts, ":") != "localhost:0.0.0.0" {
 		t.Errorf("incorrect AllowedHosts %s", d.AllowedHosts)
 	}
 
-	if str(d.Names) != "John:Bob:Smit" {
+	if str(d.Names, ":") != "John:Bob:Smit" {
 		t.Errorf("incorrect AllowedHosts %s", d.AllowedHosts)
 	}
 
 	// Set any values.
-	Set("HOST", "localhost")
-	Set("ALLOWED_HOSTS", "127.0.0.1:localhost")
-	Set("NAME_LIST", "John")
+	for _, item := range tests {
+		err = Set(item[0], item[1])
+		if err != nil {
+			t.Error(err)
+		}
+	}
 
 	// Unmarshaling wit environment values.
 	d = data{}
@@ -857,11 +830,11 @@ func TestUnmarshalDefaultValue(t *testing.T) {
 		t.Errorf("Host sets as default %s", d.Host)
 	}
 
-	if str(d.AllowedHosts) == "localhost:0.0.0.0" {
+	if str(d.AllowedHosts, ":") == "localhost:0.0.0.0" {
 		t.Errorf("AllowedHosts sets as default %s", d.AllowedHosts)
 	}
 
-	if str(d.Names) == "John:Bob:Smit" {
+	if str(d.Names, ":") == "John:Bob:Smit" {
 		t.Errorf("Names setas as default %s", d.Names)
 	}
 }

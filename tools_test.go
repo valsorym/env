@@ -94,8 +94,8 @@ func TestParseExpressionIncorrectKey(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		if _, _, err := parseExpression(test); err != KeyError {
-			t.Errorf("For `%s` value must be KeyError.", test)
+		if _, _, err := parseExpression(test); err == nil {
+			t.Errorf("For `%s` value must be an error.", test)
 		}
 	}
 }
@@ -113,8 +113,8 @@ func TestParseExpressionIncorrectValue(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		if _, _, err := parseExpression(test); err != ValueError {
-			t.Errorf("For `%s` value must be ValueError.", test)
+		if _, _, err := parseExpression(test); err == nil {
+			t.Errorf("For `%s` value must be an error.", test)
 		}
 	}
 }
@@ -223,7 +223,7 @@ func TestStrToIntKind(t *testing.T) {
 			t.Errorf("any error should return zero but returns %v", r)
 		}
 
-		control := fmt.Sprintf("%d", int64(r))
+		control := fmt.Sprintf("%d", r)
 		if control != data.Control {
 			t.Errorf("expected %s but returns %s", data.Control, control)
 		}
@@ -278,7 +278,7 @@ func TestStrToUintKind(t *testing.T) {
 			t.Errorf("any error should return zero but returns %v", r)
 		}
 
-		control := fmt.Sprintf("%d", uint64(r))
+		control := fmt.Sprintf("%d", r)
 		if control != data.Control {
 			t.Errorf("expected %s but generated %s", data.Control, control)
 		}
@@ -319,7 +319,7 @@ func TestStrToFloatKind(t *testing.T) {
 			t.Errorf("any error should return zero but returns %v", r)
 		}
 
-		control := fmt.Sprintf("%.2f", float64(r))
+		control := fmt.Sprintf("%.2f", r)
 		if control != data.Control {
 			t.Errorf("expected %s but generated %s", data.Control, control)
 		}

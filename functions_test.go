@@ -6,11 +6,16 @@ import (
 
 // TestLoad tests Load function.
 func TestLoad(t *testing.T) {
+	var err error
+
 	Clear()
-	Set("KEY_0", "default")
+	err = Set("KEY_0", "default")
+	if err != nil {
+		t.Error(err)
+	}
 
 	// Load env-file.
-	err := Load("./fixtures/variables.env")
+	err = Load("./fixtures/variables.env")
 	if err != nil {
 		t.Error("Unable to open file.")
 	}
@@ -33,11 +38,16 @@ func TestLoad(t *testing.T) {
 
 // TestLoadSafe tests LoadSafe function.
 func TestLoadSafe(t *testing.T) {
+	var err error
+
 	Clear()
-	Set("KEY_0", "default")
+	err = Set("KEY_0", "default")
+	if err != nil {
+		t.Error(err)
+	}
 
 	// Load env-file.
-	err := LoadSafe("./fixtures/variables.env")
+	err = LoadSafe("./fixtures/variables.env")
 	if err != nil {
 		t.Error("Unable to open file.")
 	}
@@ -50,11 +60,16 @@ func TestLoadSafe(t *testing.T) {
 
 // TestUpdate tests Update function.
 func TestUpdate(t *testing.T) {
+	var err error
+
 	Clear()
-	Set("KEY_0", "default")
+	err = Set("KEY_0", "default")
+	if err != nil {
+		t.Error(err)
+	}
 
 	// Load env-file.
-	err := Update("./fixtures/variables.env")
+	err = Update("./fixtures/variables.env")
 	if err != nil {
 		t.Error("Unable to open file.")
 	}
@@ -77,11 +92,16 @@ func TestUpdate(t *testing.T) {
 
 // TestUpdateSafe tests UpdateSafe function.
 func TestUpdateSafe(t *testing.T) {
+	var err error
+
 	Clear()
-	Set("KEY_0", "default")
+	err = Set("KEY_0", "default")
+	if err != nil {
+		t.Error(err)
+	}
 
 	// Load env-file.
-	err := UpdateSafe("./fixtures/variables.env")
+	err = UpdateSafe("./fixtures/variables.env")
 	if err != nil {
 		t.Error("Unable to open file.")
 	}
@@ -94,9 +114,21 @@ func TestUpdateSafe(t *testing.T) {
 
 // TestExists tests Exists function.
 func TestExist(t *testing.T) {
+	var (
+		err   error
+		tests = [][]string{
+			[]string{"KEY_0", "default"},
+			[]string{"KEY_1", "default"},
+		}
+	)
+
 	Clear()
-	Set("KEY_0", "default")
-	Set("KEY_1", "default")
+	for _, item := range tests {
+		err = Set(item[0], item[1])
+		if err != nil {
+			t.Error(err)
+		}
+	}
 
 	// Variables is exists.
 	if !Exists("KEY_0") || !Exists("KEY_0", "KEY_1") {

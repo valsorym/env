@@ -15,14 +15,23 @@ type CustomMarshal struct {
 
 // MarshalENV the custom method for marshalling.
 func (c *CustomMarshal) MarshalENV() ([]string, error) {
-	// Test data set manually.
-	Set("HOST", "192.168.0.1")
-	Set("PORT", "80")
-	Set("ALLOWED_HOSTS", "192.168.0.1")
+	var tests = [][]string{
+		[]string{"HOST", "192.168.0.1"},
+		[]string{"PORT", "80"},
+		[]string{"ALLOWED_HOSTS", "localhost"},
+	}
+
+	for _, item := range tests {
+		err := Set(item[0], item[1])
+		if err != nil {
+			return []string{}, err
+		}
+	}
+
 	return []string{
 		"HOST=192.168.0.1",
 		"PORT=80",
-		"ALLOWED_HOSTS=192.168.0.1",
+		"ALLOWED_HOSTS=localhost",
 	}, nil
 }
 
@@ -46,14 +55,15 @@ func TestMarshalNotStruct(t *testing.T) {
 
 // TestMarshalENV tests marshalENV function with struct value.
 func TestMarshalENV(t *testing.T) {
-	type Struct struct {
+	type data struct {
 		Host         string    `env:"HOST"`
 		Port         int       `env:"PORT"`
 		AllowedHosts []string  `env:"ALLOWED_HOSTS,,!"`
 		AllowedUsers [2]string `env:"ALLOWED_USERS,,:"`
 	}
-	var value = Struct{
-		"localhost",
+
+	var value = data{
+		"192.168.0.5",
 		8080,
 		[]string{"localhost", "127.0.0.1"},
 		[2]string{"John", "Bob"},
@@ -66,7 +76,7 @@ func TestMarshalENV(t *testing.T) {
 	}
 
 	// Test marshalling.
-	if v := Get("HOST"); v != "localhost" {
+	if v := Get("HOST"); v != "192.168.0.5" {
 		t.Errorf("Incorrect value set for HOST: %s", v)
 	}
 
@@ -92,7 +102,7 @@ func TestMarshalENVPtr(t *testing.T) {
 		AllowedUsers [2]string `env:"ALLOWED_USERS,,:"`
 	}
 	var value = &Struct{
-		"localhost",
+		"192.168.0.5",
 		8080,
 		[]string{"localhost", "127.0.0.1"},
 		[2]string{"John", "Bob"},
@@ -105,7 +115,7 @@ func TestMarshalENVPtr(t *testing.T) {
 	}
 
 	// Test marshalling.
-	if v := Get("HOST"); v != "localhost" {
+	if v := Get("HOST"); v != "192.168.0.5" {
 		t.Errorf("Incorrect value set for HOST: %s", v)
 	}
 
@@ -146,7 +156,7 @@ func TestMarshalENVCustom(t *testing.T) {
 		t.Errorf("Incorrect value set for PORT: %s", v)
 	}
 
-	if v := Get("ALLOWED_HOSTS"); v != "192.168.0.1" {
+	if v := Get("ALLOWED_HOSTS"); v != "localhost" {
 		t.Errorf("Incorrect value set for ALLOWED_HOSTS: %s", v)
 	}
 }
@@ -175,7 +185,7 @@ func TestMarshalENVCustomPtr(t *testing.T) {
 		t.Errorf("Incorrect value set for PORT: %s", v)
 	}
 
-	if v := Get("ALLOWED_HOSTS"); v != "192.168.0.1" {
+	if v := Get("ALLOWED_HOSTS"); v != "localhost" {
 		t.Errorf("Incorrect value set for ALLOWED_HOSTS: %s", v)
 	}
 }
@@ -213,7 +223,10 @@ func TestMarshalURL(t *testing.T) {
 		},
 	}
 
-	Marshal(data)
+	_, err := Marshal(data)
+	if err != nil {
+		t.Error(err)
+	}
 
 	// Tests results.
 	if v := Get("KEY_URL_PLAIN"); v != "http://plain.example.com" {

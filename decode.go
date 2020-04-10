@@ -1,6 +1,7 @@
 package env
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 	"reflect"
@@ -34,11 +35,11 @@ func unmarshalENV(obj interface{}, pfx string) error {
 	// The object must be an initialized pointer of the struct.
 	switch {
 	case !inst.IsPtr:
-		return IsNotPointerError
+		return errors.New("object isn't a pointer")
 	case !inst.IsValid:
-		return IsNotInitializedError
+		return errors.New("object must be initialized")
 	case !inst.IsStruct:
-		return IsNotStructError
+		return errors.New("object isn't a struct")
 	}
 
 	// If objects implements Unmarshaler interface try to calling
@@ -229,7 +230,7 @@ func setValue(item reflect.Value, value string) error {
 			}
 			item.Set(reflect.ValueOf(u))
 		default:
-			return TypeError
+			return fmt.Errorf("incorrect type: %s", item.Type())
 		}
 	case reflect.Struct:
 		// The url.URL struct only.
@@ -241,10 +242,10 @@ func setValue(item reflect.Value, value string) error {
 			}
 			item.Set(reflect.ValueOf(*u))
 		default:
-			return TypeError
+			return fmt.Errorf("incorrect type: %s", item.Type())
 		}
 	default:
-		return TypeError
+		return fmt.Errorf("incorrect type: %s", item.Type())
 	}
 
 	return nil

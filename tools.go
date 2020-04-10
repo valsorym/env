@@ -53,7 +53,7 @@ func parseExpression(exp string) (key, value string, err error) {
 	// Remove `export` prefix, `=` suffix and trim spaces.
 	tmp := keyRegex.FindStringSubmatch(exp)
 	if len(tmp) < 2 {
-		err = KeyError
+		err = fmt.Errorf("missing variable name")
 		return
 	}
 	key = tmp[1]
@@ -62,7 +62,7 @@ func parseExpression(exp string) (key, value string, err error) {
 	// ... the `=` sign in the string.
 	value = exp[strings.Index(exp, "="):]
 	if !valueRegex.Match([]byte(value)) {
-		err = ValueError
+		err = fmt.Errorf("incorrect value: %s", value)
 		return
 	}
 	value = strings.TrimSpace(value[1:])
@@ -77,12 +77,12 @@ func parseExpression(exp string) (key, value string, err error) {
 		value = strings.Replace(value, fmt.Sprintf("\\%s", quote), marker, -1)
 		value = removeInlineComment(value, quote)
 		if strings.Count(value, quote)%2 != 0 { // begin- and end- quotes
-			err = ValueError
+			err = fmt.Errorf("incorrect value: %s", value)
 			return
 		}
 		value = value[1 : len(value)-1] // remove begin- and end- quotes
 		// ... change `\"` and `\'` to `"` and `'`.
-		value = strings.Replace(value, marker, fmt.Sprintf("%s", quote), -1)
+		value = strings.Replace(value, marker, quote, -1)
 	default:
 		if strings.Contains(value, "#") {
 			// Split by sharp sign and for string without quotes -
@@ -236,5 +236,5 @@ func strToBool(value string) (bool, error) {
 		}
 	}
 
-	return bool(r), nil
+	return r, nil
 }

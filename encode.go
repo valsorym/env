@@ -1,6 +1,7 @@
 package env
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 	"reflect"
@@ -34,9 +35,9 @@ func marshalENV(obj interface{}, pfx string) ([]string, error) {
 	// The object must be an initialized of the struct.
 	switch {
 	case !inst.IsValid:
-		return []string{}, IsNotInitializedError
+		return []string{}, errors.New("object must be initialized")
 	case !inst.IsStruct:
-		return []string{}, IsNotStructError
+		return []string{}, errors.New("object isn't a struct")
 	}
 
 	// Implements Marshaler interface.
@@ -105,7 +106,10 @@ func marshalENV(obj interface{}, pfx string) ([]string, error) {
 
 		// Set into environment and add to result list.
 		key = fmt.Sprintf("%s%s", pfx, key)
-		Set(key, value)
+		err = Set(key, value)
+		if err != nil {
+			return result, err
+		}
 		result = append(result, fmt.Sprintf("%s=%s", key, value))
 	} // for
 
@@ -130,7 +134,7 @@ func getSequence(item *reflect.Value, sep string) (string, error) {
 		kind = tmp.Index(0).Kind()
 		max = item.Len()
 	default:
-		return "", TypeError
+		return "", fmt.Errorf("incorrect type: %s", item.Type())
 	}
 
 	// Item list string display.
@@ -175,7 +179,7 @@ func toStr(item reflect.Value) (string, error) {
 	case reflect.Bool:
 		value = fmt.Sprintf("%t", item.Bool())
 	case reflect.String:
-		value = fmt.Sprintf("%s", item.String())
+		value = item.String()
 	case reflect.Struct:
 		// Support for url.URL struct only.
 		if u, ok := item.Interface().(url.URL); ok {
@@ -184,7 +188,7 @@ func toStr(item reflect.Value) (string, error) {
 		}
 		fallthrough
 	default:
-		return "", TypeError
+		return "", fmt.Errorf("incorrect type: %s", item.Type())
 	}
 
 	return value, nil

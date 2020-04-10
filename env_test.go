@@ -68,8 +68,8 @@ func TestReadParseStoreComments(t *testing.T) {
 // spaces before the equal sign.
 func TestReadParseStoreWorngEqualKey(t *testing.T) {
 	err := ReadParseStore("./fixtures/wrongequalkey.env", false, false, false)
-	if err != KeyError {
-		t.Error("Must be incorrectKeyError")
+	if err == nil {
+		t.Error("Must be an error.")
 	}
 
 }
@@ -78,8 +78,8 @@ func TestReadParseStoreWorngEqualKey(t *testing.T) {
 // space after the equal sign.
 func TestReadParseStoreWorngEqualValue(t *testing.T) {
 	err := ReadParseStore("./fixtures/wrongequalvalue.env", false, true, false)
-	if err != ValueError {
-		t.Error("Must be incorrectValueError")
+	if err == nil {
+		t.Error("Must be an error")
 	}
 }
 
@@ -139,14 +139,20 @@ func TestReadParseStoreVariables(t *testing.T) {
 
 // TestReadParseStoreNotUpdate tests variable update protection.
 func TestReadParseStoreNotUpdate(t *testing.T) {
-	var update = false
+	var (
+		update = false
+		err    error
+	)
 
 	// Set test data.
 	Clear()
-	Set("KEY_0", "") // set empty string
+	err = Set("KEY_0", "") // set empty string
+	if err != nil {
+		t.Error(err)
+	}
 
 	// Read simple env-file with KEY_0.
-	err := ReadParseStore("./fixtures/simple.env", false, update, false)
+	err = ReadParseStore("./fixtures/simple.env", false, update, false)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -159,14 +165,20 @@ func TestReadParseStoreNotUpdate(t *testing.T) {
 
 // TestReadParseStoreUpdate tests variable update.
 func TestReadParseStoreUpdate(t *testing.T) {
-	var update = true
+	var (
+		update = true
+		err    error
+	)
 
 	// Set test data.
 	Clear()
-	Set("KEY_0", "") // set empty string
+	err = Set("KEY_0", "") // set empty string
+	if err != nil {
+		t.Error(err)
+	}
 
 	// Read simple env-file with KEY_0.
-	err := ReadParseStore("./fixtures/simple.env", false, update, false)
+	err = ReadParseStore("./fixtures/simple.env", false, update, false)
 	if err != nil {
 		t.Error(err.Error())
 	}

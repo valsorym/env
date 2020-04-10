@@ -68,7 +68,10 @@ func ReadParseStore(filename string, expand, update, forced bool) (err error) {
 			if expand {
 				value = Expand(value)
 			}
-			Set(key, value)
+			err = Set(key, value)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
