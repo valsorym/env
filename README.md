@@ -1,3 +1,6 @@
+[![Go Report Card](https://goreportcard.com/badge/github.com/goloop/env)](https://goreportcard.com/report/github.com/goloop/env) [![License](https://img.shields.io/badge/license-BSD-blue)](https://github.com/goloop/env/blob/master/LICENSE)
+
+
 # env
 
 Package `env` it's simple lib for manage [environment's variables](https://en.wikipedia.org/wiki/Environment_variable), parse and convert it into Go-structures.
