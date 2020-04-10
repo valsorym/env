@@ -99,18 +99,18 @@ func TestUnmarshalENVNumbers(t *testing.T) {
 	var (
 		overflow = "9999999999999999999999999999999999999999999999999999999999"
 		tests    = map[string][]string{
-			"KEY_INT":     []string{"2", "-2", overflow},
-			"KEY_INT8":    []string{"8", "-8", overflow},
-			"KEY_INT16":   []string{"16", "-16", overflow},
-			"KEY_INT32":   []string{"32", "-32", overflow},
-			"KEY_INT64":   []string{"64", "-64", overflow},
-			"KEY_UINT":    []string{"2", "-2", overflow},
-			"KEY_UINT8":   []string{"8", "-8", overflow},
-			"KEY_UINT16":  []string{"16", "-16", overflow},
-			"KEY_UINT32":  []string{"32", "-32", overflow},
-			"KEY_UINT64":  []string{"64", "-64", overflow},
-			"KEY_FLOAT32": []string{"32.3", "-32.5", overflow},
-			"KEY_FLOAT64": []string{"64.3", "-64.5", overflow},
+			"KEY_INT":     {"2", "-2", overflow},
+			"KEY_INT8":    {"8", "-8", overflow},
+			"KEY_INT16":   {"16", "-16", overflow},
+			"KEY_INT32":   {"32", "-32", overflow},
+			"KEY_INT64":   {"64", "-64", overflow},
+			"KEY_UINT":    {"2", "-2", overflow},
+			"KEY_UINT8":   {"8", "-8", overflow},
+			"KEY_UINT16":  {"16", "-16", overflow},
+			"KEY_UINT32":  {"32", "-32", overflow},
+			"KEY_UINT64":  {"64", "-64", overflow},
+			"KEY_FLOAT32": {"32.3", "-32.5", overflow},
+			"KEY_FLOAT64": {"64.3", "-64.5", overflow},
 		}
 	)
 
@@ -503,27 +503,27 @@ func TestUnmarshalURL(t *testing.T) {
 		d     = data{}
 
 		defaults = [][]string{
-			[]string{
+			{
 				"KEY_URL_PLAIN",
 				"http://plain.example.com",
 			},
-			[]string{
+			{
 				"KEY_URL_POINT",
 				"http://point.example.com",
 			},
-			[]string{
+			{
 				"KEY_URL_PLAIN_SLICE",
 				"http://a.plain.example.com!http://b.plain.example.com",
 			},
-			[]string{
+			{
 				"KEY_URL_POINT_SLICE",
 				"http://a.point.example.com!http://b.point.example.com",
 			},
-			[]string{
+			{
 				"KEY_URL_PLAIN_ARRAY",
 				"http://c.plain.example.com!http://d.plain.example.com",
 			},
-			[]string{
+			{
 				"KEY_URL_POINT_ARRAY",
 				"http://c.point.example.com!http://d.point.example.com",
 			},
@@ -616,9 +616,9 @@ func TestUnmarshalStruct(t *testing.T) {
 		err   error
 		c     = Client{}
 		tests = [][]string{
-			[]string{"USER_NAME", "Jerry"},
-			[]string{"USER_ADDRESS_COUNTRY", "UK"},
-			[]string{"HOME_PAGE", "http://example.org"},
+			{"USER_NAME", "Jerry"},
+			{"USER_ADDRESS_COUNTRY", "UK"},
+			{"HOME_PAGE", "http://example.org"},
 		}
 	)
 
@@ -669,9 +669,9 @@ func TestUnmarshalStructPtr(t *testing.T) {
 		err   error
 		c     = Client{}
 		tests = [][]string{
-			[]string{"USER_NAME", "Lucy"},
-			[]string{"USER_ADDRESS_COUNTRY", "UA"},
-			[]string{"HOME_PAGE", "http://example.net"},
+			{"USER_NAME", "Lucy"},
+			{"USER_ADDRESS_COUNTRY", "UA"},
+			{"HOME_PAGE", "http://example.net"},
 		}
 	)
 
@@ -709,9 +709,9 @@ func TestUnmarshalENVCustom(t *testing.T) {
 		c     = &dataUnmarshalENV{}
 		err   error
 		tests = [][]string{
-			[]string{"HOST", "0.0.0.1"},
-			[]string{"PORT", "8080"},
-			[]string{"ALLOWED_HOSTS", "localhost:127.0.0.1"},
+			{"HOST", "0.0.0.1"},
+			{"PORT", "8080"},
+			{"ALLOWED_HOSTS", "localhost:127.0.0.1"},
 		}
 	)
 
@@ -784,9 +784,9 @@ func TestUnmarshalDefaultValue(t *testing.T) {
 		d     data
 		err   error
 		tests = [][]string{
-			[]string{"HOST", "localhost"},
-			[]string{"ALLOWED_HOSTS", "127.0.0.1:localhost"},
-			[]string{"NAME_LIST", "John"},
+			{"HOST", "localhost"},
+			{"ALLOWED_HOSTS", "127.0.0.1:localhost"},
+			{"NAME_LIST", "John"},
 		}
 	)
 

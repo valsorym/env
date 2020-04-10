@@ -29,7 +29,7 @@ type Unmarshaler interface {
 // slice/array of these types is not supported (except url.URL and
 // *url.URL from the net package).
 func unmarshalENV(obj interface{}, pfx string) error {
-	var inst instance = instance{}
+	inst := instance{}
 	inst.Init(obj)
 
 	// The object must be an initialized pointer of the struct.

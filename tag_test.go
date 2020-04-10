@@ -11,13 +11,13 @@ func TestSplitFieldTag(t *testing.T) {
 	var (
 		msg     = "for `%s` incorrect %s: `%s` != `%s`"
 		correct = []sample{
-			sample{
+			{
 				tag:   "HOST",
 				key:   "HOST",
 				value: "",
 				sep:   ":",
 			},
-			sample{
+			{
 				tag:   ",{localhost,0.0.0.0}",
 				key:   "",
 				value: "localhost,0.0.0.0",

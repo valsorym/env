@@ -117,8 +117,8 @@ func TestExist(t *testing.T) {
 	var (
 		err   error
 		tests = [][]string{
-			[]string{"KEY_0", "default"},
-			[]string{"KEY_1", "default"},
+			{"KEY_0", "default"},
+			{"KEY_1", "default"},
 		}
 	)
 

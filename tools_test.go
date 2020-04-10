@@ -68,9 +68,9 @@ func TestIsEmpty(t *testing.T) {
 // TestRemoveInlineComment tests removeCommentInline function.
 func TestRemoveInlineComment(t *testing.T) {
 	var items = [][]string{
-		[]string{`="value" # comment`, `="value"`},
-		[]string{`="value's" # comment`, `="value's"`},
-		[]string{`="value # here" # comment`, `="value # here"`},
+		{`="value" # comment`, `="value"`},
+		{`="value's" # comment`, `="value's"`},
+		{`="value # here" # comment`, `="value # here"`},
 	}
 
 	for _, item := range items {
@@ -138,20 +138,20 @@ func TestParseExpression(t *testing.T) {
 // TestStrToBool tests strToBool function.
 func TestStrToBool(t *testing.T) {
 	var tests = []BoolDataTestType{
-		BoolDataTestType{"", false, true},
-		BoolDataTestType{"0", false, true},
-		BoolDataTestType{"1", true, true},
-		BoolDataTestType{"1.1", true, true},
-		BoolDataTestType{"-1.1", true, true},
-		BoolDataTestType{"0.0", false, true},
-		BoolDataTestType{"true", true, true},
-		BoolDataTestType{"True", true, true},
-		BoolDataTestType{"TRUE", true, true},
-		BoolDataTestType{"false", false, true},
-		BoolDataTestType{"False", false, true},
-		BoolDataTestType{"FALSE", false, true},
-		BoolDataTestType{"string", false, false},
-		BoolDataTestType{"a:b:c", false, false},
+		{"", false, true},
+		{"0", false, true},
+		{"1", true, true},
+		{"1.1", true, true},
+		{"-1.1", true, true},
+		{"0.0", false, true},
+		{"true", true, true},
+		{"True", true, true},
+		{"TRUE", true, true},
+		{"false", false, true},
+		{"False", false, true},
+		{"FALSE", false, true},
+		{"string", false, false},
+		{"a:b:c", false, false},
 	}
 
 	// Test correct values.
@@ -187,29 +187,29 @@ func TestStrToIntKind(t *testing.T) {
 
 	// Test data.
 	tests = []UIFDataTestType{
-		UIFDataTestType{"", "0", true, reflect.Int},
-		UIFDataTestType{"0", "0", true, reflect.Int},
-		UIFDataTestType{"-3", "-3", true, reflect.Int},
-		UIFDataTestType{"3", "3", true, reflect.Int},
+		{"", "0", true, reflect.Int},
+		{"0", "0", true, reflect.Int},
+		{"-3", "-3", true, reflect.Int},
+		{"3", "3", true, reflect.Int},
 
-		UIFDataTestType{"-128", "-128", true, reflect.Int8},
-		UIFDataTestType{"127", "127", true, reflect.Int8},
+		{"-128", "-128", true, reflect.Int8},
+		{"127", "127", true, reflect.Int8},
 
-		UIFDataTestType{maxInt, maxInt, true, reflect.Int},
-		UIFDataTestType{maxInt8, maxInt8, true, reflect.Int8},
-		UIFDataTestType{maxInt16, maxInt16, true, reflect.Int16},
-		UIFDataTestType{maxInt32, maxInt32, true, reflect.Int32},
-		UIFDataTestType{maxInt64, maxInt64, true, reflect.Int64},
+		{maxInt, maxInt, true, reflect.Int},
+		{maxInt8, maxInt8, true, reflect.Int8},
+		{maxInt16, maxInt16, true, reflect.Int16},
+		{maxInt32, maxInt32, true, reflect.Int32},
+		{maxInt64, maxInt64, true, reflect.Int64},
 
-		UIFDataTestType{"string", "0", false, reflect.Int},
-		UIFDataTestType{"3" + maxInt, "0", false, reflect.Int},
-		UIFDataTestType{"3" + maxInt8, "0", false, reflect.Int8},
-		UIFDataTestType{"-129", "0", false, reflect.Int8},
-		UIFDataTestType{"128", "0", false, reflect.Int8},
-		UIFDataTestType{"3" + maxInt16, "0", false, reflect.Int16},
-		UIFDataTestType{"3" + maxInt32, "0", false, reflect.Int32},
-		UIFDataTestType{"3" + maxInt64, "0", false, reflect.Int64},
-		UIFDataTestType{"0", "0", false, reflect.Slice},
+		{"string", "0", false, reflect.Int},
+		{"3" + maxInt, "0", false, reflect.Int},
+		{"3" + maxInt8, "0", false, reflect.Int8},
+		{"-129", "0", false, reflect.Int8},
+		{"128", "0", false, reflect.Int8},
+		{"3" + maxInt16, "0", false, reflect.Int16},
+		{"3" + maxInt32, "0", false, reflect.Int32},
+		{"3" + maxInt64, "0", false, reflect.Int64},
+		{"0", "0", false, reflect.Slice},
 	}
 
 	// Test correct values.
@@ -248,23 +248,23 @@ func TestStrToUintKind(t *testing.T) {
 
 	// Test data.
 	tests = []UIFDataTestType{
-		UIFDataTestType{"", "0", true, reflect.Uint},
-		UIFDataTestType{"0", "0", true, reflect.Uint},
-		UIFDataTestType{"3", "3", true, reflect.Uint},
-		UIFDataTestType{maxUint, maxUint, true, reflect.Uint},
-		UIFDataTestType{maxUint8, maxUint8, true, reflect.Uint8},
-		UIFDataTestType{maxUint16, maxUint16, true, reflect.Uint16},
-		UIFDataTestType{maxUint32, maxUint32, true, reflect.Uint32},
-		UIFDataTestType{maxUint64, maxUint64, true, reflect.Uint64},
+		{"", "0", true, reflect.Uint},
+		{"0", "0", true, reflect.Uint},
+		{"3", "3", true, reflect.Uint},
+		{maxUint, maxUint, true, reflect.Uint},
+		{maxUint8, maxUint8, true, reflect.Uint8},
+		{maxUint16, maxUint16, true, reflect.Uint16},
+		{maxUint32, maxUint32, true, reflect.Uint32},
+		{maxUint64, maxUint64, true, reflect.Uint64},
 
-		UIFDataTestType{"string", "0", false, reflect.Uint},
-		UIFDataTestType{"-3", "0", false, reflect.Uint},
-		UIFDataTestType{"9" + maxUint, "0", false, reflect.Uint},
-		UIFDataTestType{"9" + maxUint8, "0", false, reflect.Uint8},
-		UIFDataTestType{"9" + maxUint16, "0", false, reflect.Uint16},
-		UIFDataTestType{"9" + maxUint32, "0", false, reflect.Uint32},
-		UIFDataTestType{"9" + maxUint64, "0", false, reflect.Uint64},
-		UIFDataTestType{"0", "0", false, reflect.Slice},
+		{"string", "0", false, reflect.Uint},
+		{"-3", "0", false, reflect.Uint},
+		{"9" + maxUint, "0", false, reflect.Uint},
+		{"9" + maxUint8, "0", false, reflect.Uint8},
+		{"9" + maxUint16, "0", false, reflect.Uint16},
+		{"9" + maxUint32, "0", false, reflect.Uint32},
+		{"9" + maxUint64, "0", false, reflect.Uint64},
+		{"0", "0", false, reflect.Slice},
 	}
 
 	// Test correct values.
@@ -295,17 +295,17 @@ func TestStrToFloatKind(t *testing.T) {
 
 	// Test data.
 	tests = []UIFDataTestType{
-		UIFDataTestType{"", "0.00", true, reflect.Float64},
-		UIFDataTestType{"0.0", "0.00", true, reflect.Float64},
-		UIFDataTestType{"3.0", "3.00", true, reflect.Float64},
-		UIFDataTestType{"-3.1", "-3.10", true, reflect.Float64},
-		UIFDataTestType{maxFloat32, maxFloat32, true, reflect.Float32},
-		UIFDataTestType{maxFloat64, maxFloat64, true, reflect.Float64},
+		{"", "0.00", true, reflect.Float64},
+		{"0.0", "0.00", true, reflect.Float64},
+		{"3.0", "3.00", true, reflect.Float64},
+		{"-3.1", "-3.10", true, reflect.Float64},
+		{maxFloat32, maxFloat32, true, reflect.Float32},
+		{maxFloat64, maxFloat64, true, reflect.Float64},
 
-		UIFDataTestType{"string", "0.00", false, reflect.Float64},
-		UIFDataTestType{"9" + maxFloat32, "0.00", false, reflect.Float32},
-		UIFDataTestType{"9" + maxFloat64, "0.00", false, reflect.Float64},
-		UIFDataTestType{"0.00", "0.00", false, reflect.Slice},
+		{"string", "0.00", false, reflect.Float64},
+		{"9" + maxFloat32, "0.00", false, reflect.Float32},
+		{"9" + maxFloat64, "0.00", false, reflect.Float64},
+		{"0.00", "0.00", false, reflect.Slice},
 	}
 
 	// Test correct values.

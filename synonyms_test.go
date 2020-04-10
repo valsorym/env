@@ -23,8 +23,8 @@ func TestSet(t *testing.T) {
 	var (
 		err   error
 		tests = [][]string{
-			[]string{"KEY_0", "A"},
-			[]string{"KEY_1", "B"},
+			{"KEY_0", "A"},
+			{"KEY_1", "B"},
 		}
 	)
 
@@ -46,8 +46,8 @@ func TestUnset(t *testing.T) {
 	var (
 		err   error
 		tests = [][]string{
-			[]string{"KEY_0", "A"},
-			[]string{"KEY_1", "B"},
+			{"KEY_0", "A"},
+			{"KEY_1", "B"},
 		}
 	)
 
@@ -74,8 +74,8 @@ func TestClear(t *testing.T) {
 	var (
 		err   error
 		tests = [][]string{
-			[]string{"KEY_0", "A"},
-			[]string{"KEY_1", "B"},
+			{"KEY_0", "A"},
+			{"KEY_1", "B"},
 		}
 	)
 
@@ -124,8 +124,8 @@ func TestEnviron(t *testing.T) {
 // TestExpand tests Expand function.
 func TestExpand(t *testing.T) {
 	var tests = [][]string{
-		[]string{"${KEY_0}$KEY_0$KEY_0", "777"},
-		[]string{"${KEY_2}$KEY_1$KEY_0", "357"},
+		{"${KEY_0}$KEY_0$KEY_0", "777"},
+		{"${KEY_2}$KEY_1$KEY_0", "357"},
 	}
 
 	Clear()

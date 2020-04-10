@@ -16,9 +16,9 @@ type CustomMarshal struct {
 // MarshalENV the custom method for marshalling.
 func (c *CustomMarshal) MarshalENV() ([]string, error) {
 	var tests = [][]string{
-		[]string{"HOST", "192.168.0.1"},
-		[]string{"PORT", "80"},
-		[]string{"ALLOWED_HOSTS", "localhost"},
+		{"HOST", "192.168.0.1"},
+		{"PORT", "80"},
+		{"ALLOWED_HOSTS", "localhost"},
 	}
 
 	for _, item := range tests {
@@ -206,20 +206,20 @@ func TestMarshalURL(t *testing.T) {
 		KeyURLPlain: url.URL{Scheme: "http", Host: "plain.example.com"},
 		KeyURLPoint: &url.URL{Scheme: "http", Host: "point.example.com"},
 		KeyURLPlainSlice: []url.URL{
-			url.URL{Scheme: "http", Host: "a.plain.example.com"},
-			url.URL{Scheme: "http", Host: "b.plain.example.com"},
+			{Scheme: "http", Host: "a.plain.example.com"},
+			{Scheme: "http", Host: "b.plain.example.com"},
 		},
 		KeyURLPointSlice: []*url.URL{
-			&url.URL{Scheme: "http", Host: "a.point.example.com"},
-			&url.URL{Scheme: "http", Host: "b.point.example.com"},
+			{Scheme: "http", Host: "a.point.example.com"},
+			{Scheme: "http", Host: "b.point.example.com"},
 		},
 		KeyURLPlainArray: [2]url.URL{
-			url.URL{Scheme: "http", Host: "c.plain.example.com"},
-			url.URL{Scheme: "http", Host: "d.plain.example.com"},
+			{Scheme: "http", Host: "c.plain.example.com"},
+			{Scheme: "http", Host: "d.plain.example.com"},
 		},
 		KeyURLPointArray: [2]*url.URL{
-			&url.URL{Scheme: "http", Host: "c.point.example.com"},
-			&url.URL{Scheme: "http", Host: "d.point.example.com"},
+			{Scheme: "http", Host: "c.point.example.com"},
+			{Scheme: "http", Host: "d.point.example.com"},
 		},
 	}
 
