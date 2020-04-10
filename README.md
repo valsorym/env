@@ -44,7 +44,7 @@ import (
 type Config struct {
 	Host         string   `env:"HOST"`
 	Port         int      `env:"PORT"`
-	AllowedHosts []string `env:"ALLOWED_HOSTS,:"` // parse by `:`.
+	AllowedHosts []string `env:"ALLOWED_HOSTS,,:"` // parse by `:`.
 
 	// P.s. It isn't necessary to specify all the keys
 	// that are available in the environment.
@@ -109,7 +109,7 @@ type Address struct {
 type User struct {
 	Name        string   `env:"NAME"`
 	Address     *Address `env:"ADDRESS"`       // can be as pointer
-	Permissions []bool   `env:"PERMISSIONS,;"` // separator like `;`
+	Permissions []bool   `env:"PERMISSIONS,,;"` // separator like `;`
 }
 
 type Client struct {
@@ -399,10 +399,16 @@ For other filed's types (like `chan` or `map` ...) will be returned an error.
 
 If the structure implements Unmarshaler interface - the custom UnmarshalENV method will be called.
 
-Structure fields may have a `env` tag as `env:"KEY[,SEP]"` where:
+Structure fields can has a `env` tag as `env:"key[,value[,sep]]"` where:
 
-   - KEY - matches the name of the key in the environment;
-   - SEP - optional argument, sets the separator for lists (default: space).
+   - key - matches the name of the key in the environment;
+   - value - default value ;
+   - sep - optional argument, sets the separator for lists (default: `:`).
+
+\* If value contains `,` symbol:
+ 
+   - sequence can be written like {s,l,i,c,e} 
+   - string can be written like 'Hello, world' or \"Hello, world\"
 
 Suppose that the some values was set into environment as:
 
@@ -422,7 +428,7 @@ Structure example:
 type Config struct {
     Host         string   `env:"HOST"`
     Port         int      `env:"PORT"`
-    AllowedHosts []string `env:"ALLOWED_HOSTS,:"`
+    AllowedHosts []string `env:"ALLOWED_HOSTS,,:"`
 }
 ```
 
@@ -471,10 +477,16 @@ For other filed's types (like `chan` or `map` ...) will be returned an error.
 
 If the structure implements Marshaler interface - the custom MarshalENV method - will be called.
 
-Structure fields may have a `env` tag as `env:"KEY[,SEP]"` where:
+Structure fields can has a `env` tag as `env:"key[,value[,sep]]"` where:
 
-   - KEY - matches the name of the key in the environment;
-   - SEP - optional argument, sets the separator for lists (default: space).
+   - key- matches the name of the key in the environment;
+   - value - default value;
+   - sep - optional argument, sets the separator for lists (default: space).
+
+\* If value contains `,` symbol:
+ 
+   - sequence can be written like {s,l,i,c,e} 
+   - string can be written like 'Hello, world' or \"Hello, world\"
 
 Structure example:
 
@@ -483,7 +495,7 @@ Structure example:
 type Config struct {
     Host         string   `env:"HOST"`
     Port         int      `env:"PORT"`
-    AllowedHosts []string `env:"ALLOWED_HOSTS,:"`
+    AllowedHosts []string `env:"ALLOWED_HOSTS,,:"`
 }
 ```
 

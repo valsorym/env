@@ -255,9 +255,10 @@ func Exists(keys ...string) bool {
 // If the structure implements Unmarshaller interface - the custom UnmarshalENV
 // method will be called.
 //
-// Structure fields may have a env tag as `env:"key[,sep]"` where:
+// Structure fields can have a `env` tag as `env:"key[,value[,sep]]"` where:
 //
-//    key - matches the name of the key in the environment;
+//    key- matches the name of the key in the environment;
+//    value - default value;
 //    sep - optional argument, sets the separator for lists (default: space).
 //
 // Suppose that the some values was set into environment as:
@@ -327,10 +328,11 @@ func Unmarshal(obj interface{}) error {
 // If the structure implements Marshaller interface - the custom MarshalENV
 // method - will be called.
 //
-// Structure fields may have a env tag as `env:"KEY[,SEP]"` where:
+// Structure fields can have a `env` tag as `env:"key[,value[,sep]]"` where:
 //
-//    KEY - matches the name of the key in the environment;
-//    SEP - optional argument, sets the separator for lists (default: space).
+//    key- matches the name of the key in the environment;
+//    value - default value;
+//    sep - optional argument, sets the separator for lists (default: space).
 //
 // Structure example:
 //
