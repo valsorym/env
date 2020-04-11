@@ -13,7 +13,8 @@ SRC_PATH:=$(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
 
 # Help information.
 define MSG_HELP
-The `env` it is environment variable management pack.
+Package `env` it's simple lib for manage environment's variables,
+parse and convert it into Go-structures.
 
 Commands:
 	help
@@ -42,10 +43,10 @@ unlink:
 		rm -Rf ${REPOSITORY_NAME}/${PACKAGE_NAME} && \
 		echo "Unlinked: ${GOPATH}/src/${REPOSITORY_NAME}/${PACKAGE_NAME}"
 test:
-	@go test github.com/goloop/env
+	@go test ${REPOSITORY_NAME}/${PACKAGE_NAME}
 test-cover:
-	@go test -cover github.com/goloop/env && \
-		go test -coverprofile=/tmp/coverage.out github.com/goloop/env && \
+	@go test -cover ${REPOSITORY_NAME}/${PACKAGE_NAME} && \
+		go test -coverprofile=/tmp/coverage.out ${REPOSITORY_NAME}/${PACKAGE_NAME} && \
 		go tool cover -func=/tmp/coverage.out && \
 		go tool cover -html=/tmp/coverage.out
 lint:
